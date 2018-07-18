@@ -1,0 +1,416 @@
+C51 COMPILER V9.52.0.0   UARTCOM                                                           07/02/2018 10:17:03 PAGE 1   
+
+
+C51 COMPILER V9.52.0.0, COMPILATION OF MODULE UARTCOM
+OBJECT MODULE PLACED IN .\Output\UartCom.obj
+COMPILER INVOKED BY: D:\Program Files\Keil\C51\BIN\C51.EXE Source\UartCom.c BROWSE INCDIR(.\Include;.\Bsp) DEFINE(FOSC_1
+                    -60000) DEBUG OBJECTEXTEND PRINT(.\List\UartCom.lst) TABS(2) OBJECT(.\Output\UartCom.obj)
+
+line level    source
+
+   1          #define __UART_COM_C__
+   2          #include "UartCom.h"
+   3          #include "PacketQueue.h"
+   4          #include "Common.h"
+   5          #include "Uart.h"
+   6          #include "Log.h"
+   7          
+   8          void UartPackethandle(void);
+   9          static void HeatBeatCheck(void);
+  10          static void ProductInfoUpdate(void);
+  11          static void SetTxPacketData(uint8 const* const d, uint8 XDATA length);
+  12          static void SendTxPacketData(uint8 XDATA cmd);
+  13          
+  14          
+  15          void UartPacketInit(void)
+  16          {
+  17   1        isrCfg.rxCnt = 0;
+  18   1        isrCfg.rxStatus = RX_IDDLE;
+  19   1        isrCfg.rxPack.head_0 = P_HEAD_0;
+  20   1        isrCfg.rxPack.head_1 = P_HEAD_1;
+  21   1        isrCfg.rxPack.ver = P_VER;
+  22   1        
+  23   1        isrCfg.txCnt = 0;
+  24   1        isrCfg.txStatus = RX_IDDLE;
+  25   1        isrCfg.txPack.head_0 = P_HEAD_0;
+  26   1        isrCfg.txPack.head_1 = P_HEAD_1;
+  27   1        isrCfg.txPack.ver = P_VER;
+  28   1      }
+  29          void UartPacketParse(void)
+  30          {
+  31   1          uint8 XDATA dat;
+  32   1        uint8 XDATA checkSum;
+  33   1        if(QueuePend(&dat) != 0)
+  34   1        { 
+  35   2          return ;
+  36   2        }
+  37   1        putchar(getHex(HI_UINT8(dat)));
+  38   1        putchar(getHex(LO_UINT8(dat)));
+  39   1        putchar(' ');
+  40   1        switch(isrCfg.rxStatus)
+  41   1        {
+  42   2          case RX_IDDLE:
+  43   2          {
+  44   3            if(dat == P_HEAD_0)
+  45   3            {
+  46   4              isrCfg.rxStatus = RX_HEAD_0;
+  47   4            }
+  48   3            break;
+  49   3          }
+  50   2      
+  51   2          case RX_HEAD_0:
+  52   2          {
+  53   3            if(dat == P_HEAD_1)
+  54   3            {
+C51 COMPILER V9.52.0.0   UARTCOM                                                           07/02/2018 10:17:03 PAGE 2   
+
+  55   4              isrCfg.rxStatus = RX_HEAD_1;
+  56   4            }
+  57   3            else
+  58   3            {
+  59   4              isrCfg.rxStatus = RX_IDDLE;
+  60   4            }
+  61   3            break;
+  62   3          } 
+  63   2          case RX_HEAD_1:
+  64   2          {
+  65   3            if(dat == P_VER)
+  66   3            {
+  67   4              isrCfg.rxStatus = RX_VER;
+  68   4            }
+  69   3            else
+  70   3            {
+  71   4              isrCfg.rxStatus = RX_IDDLE;
+  72   4            }
+  73   3            break;
+  74   3          }
+  75   2          case RX_VER:
+  76   2          {
+  77   3            isrCfg.rxPack.cmd = dat;  //CMD
+  78   3            isrCfg.rxStatus = RX_CMD;
+  79   3            break;
+  80   3          }
+  81   2          case RX_CMD:
+  82   2          {
+  83   3            isrCfg.rxPack.length[0] = dat;  //LENGTH0
+  84   3            isrCfg.rxStatus = RX_LEN_0;
+  85   3      
+  86   3            break;
+  87   3          }
+  88   2          case RX_LEN_0:
+  89   2          {
+  90   3            isrCfg.rxPack.length[1] = dat;  //LENGTH1
+  91   3            isrCfg.rxLength = BUILD_UINT16(isrCfg.rxPack.length[1], isrCfg.rxPack.length[0]);
+  92   3            if(isrCfg.rxLength <= (UART_PACKET_DAT_MAX))
+  93   3            {
+  94   4              if(isrCfg.rxLength != 0)
+  95   4              {
+  96   5                isrCfg.rxStatus = RX_BUSY;
+  97   5              }
+  98   4              else
+  99   4              {
+ 100   5                isrCfg.rxStatus = RX_VERIFY;
+ 101   5              }
+ 102   4            }
+ 103   3            else
+ 104   3            {
+ 105   4              isrCfg.rxStatus = RX_IDDLE; 
+ 106   4              isrCfg.rxCnt = 0;
+ 107   4              isrCfg.rxLength = 0;
+ 108   4            }
+ 109   3            break;
+ 110   3          }
+ 111   2          case RX_BUSY:
+ 112   2          {
+ 113   3          //  putchar('7');
+ 114   3          //  putchar('\r');
+ 115   3          //  putchar('\n');
+ 116   3            isrCfg.rxPack.dat[isrCfg.rxCnt++] = dat;
+C51 COMPILER V9.52.0.0   UARTCOM                                                           07/02/2018 10:17:03 PAGE 3   
+
+ 117   3            if(isrCfg.rxCnt >= (isrCfg.rxLength))
+ 118   3            {
+ 119   4              isrCfg.rxStatus = RX_VERIFY;
+ 120   4            };
+ 121   3            break;
+ 122   3          }
+ 123   2          case RX_VERIFY:
+ 124   2          {
+ 125   3          //  putchar('8');
+ 126   3          //  putchar('\r');
+ 127   3          //  putchar('\n');
+ 128   3          //  putchar(getHex(HI_UINT8(dat)));
+ 129   3          //  putchar(getHex(LO_UINT8(dat)));
+ 130   3          //  putchar('\r');
+ 131   3          //  putchar('\n');
+ 132   3      
+ 133   3            checkSum = getCheckSum((uint8  *)(&(isrCfg.rxPack.head_0)), isrCfg.rxCnt+6);
+ 134   3          //  checkSum = SUM_HEAD_VER;
+ 135   3          
+ 136   3              UartSendHexBuffer(UART_WIFI, "rx sum:", (uint8  *)(&(dat)), 1, ' ', true);
+ 137   3            if(checkSum == dat)
+ 138   3            {
+ 139   4              uint8 XDATA s[] =  "+verify ok!\r\n";
+ 140   4              //  UartSendHexBuffer(UART_WIFI, "+results:", (uint8  *)(&(checkSum)), 1, ' ', true);
+ 141   4              UartSendString(UART_WIFI, s);
+ 142   4              UartPackethandle();
+ 143   4            //  UartSendHexBuffer(UART_WIFI, "+raw:", (uint8  *)(&(isrCfg.rxPack.cmd)), isrCfg.rxCnt+3, ' ', true);
+ 144   4            
+ 145   4            }
+ 146   3            else
+ 147   3            {
+ 148   4              uint8 XDATA s[] =  "-verify fail!\r\n";
+ 149   4              UartSendHexBuffer(UART_WIFI, "-results:", (uint8  *)(&(checkSum)), 1, ' ', true);
+ 150   4              checkSum = isrCfg.rxPack.dat[0] + isrCfg.rxPack.dat[1] + isrCfg.rxPack.dat[2];
+ 151   4              UartSendHexBuffer(UART_WIFI, "--results:", (uint8  *)(&(checkSum)), 1, ' ', true);
+ 152   4              UartSendString(UART_WIFI, s);
+ 153   4              UartSendHexBuffer(UART_WIFI, "-raw:", (uint8  *)(&(isrCfg.rxPack.cmd)), isrCfg.rxCnt+3, ' ', true);
+ 154   4            }
+ 155   3            isrCfg.rxStatus = RX_IDDLE;
+ 156   3            isrCfg.rxCnt = 0;
+ 157   3            break;
+ 158   3          }
+ 159   2          default:
+ 160   2          {
+ 161   3            isrCfg.rxStatus = RX_IDDLE;
+ 162   3            isrCfg.rxCnt = 0;
+ 163   3            break;
+ 164   3          }
+ 165   2        } 
+ 166   1      }
+ 167          
+ 168          /*****************************************************************************
+ 169          函数名称 : data_handle
+ 170          功能描述 : 数据帧处理
+ 171          输入参数 : offset:数据起始位
+ 172          返回参数 : 无
+ 173          *****************************************************************************/
+ 174          void UartPackethandle(void)
+ 175          {
+ 176   1      #ifdef SUPPORT_MCU_FIRM_UPDATE
+                unsigned char *firmware_addr;
+                static unsigned long firm_length;                                             //MCU升级文件长度
+C51 COMPILER V9.52.0.0   UARTCOM                                                           07/02/2018 10:17:03 PAGE 4   
+
+                static unsigned char firm_update_flag;                                        //MCU升级标志
+                unsigned long dp_len;
+              #else
+ 182   1      //  unsigned short dp_len;
+ 183   1      #endif
+ 184   1        
+ 185   1        //unsigned char ret;
+ 186   1        //unsigned short i,total_len;
+ 187   1      #ifdef WIFI_TEST_ENABLE
+                //unsigned char result;
+                //unsigned char rssi;
+              #endif
+ 191   1        
+ 192   1        switch(isrCfg.rxPack.cmd)
+ 193   1        {
+ 194   2        case HEAT_BEAT_CMD:                                   //心跳包
+ 195   2          //heat_beat_check();
+ 196   2        HeatBeatCheck();
+ 197   2        SendTxPacketData(HEAT_BEAT_CMD);
+ 198   2          break;
+ 199   2       
+ 200   2        case PRODUCT_INFO_CMD:                                //产品信息
+ 201   2          ProductInfoUpdate();
+ 202   2          SendTxPacketData(PRODUCT_INFO_CMD);
+ 203   2          break;
+ 204   2       #if 0    
+                case WORK_MODE_CMD:                                   //查询MCU设定的模块工作模式
+                  get_mcu_wifi_mode();
+                  break;
+                  
+              #ifndef WIFI_CONTROL_SELF_MODE
+                case WIFI_STATE_CMD:                                  //wifi工作状态  
+                  wifi_work_state = wifi_uart_rx_buf[offset + DATA_START];
+                  wifi_uart_write_frame(WIFI_STATE_CMD,0);
+                  break;
+              
+                case WIFI_RESET_CMD:                                  //重置wifi(wifi返回成功)
+                  reset_wifi_flag = RESET_WIFI_SUCCESS;
+                  break;
+                  
+                case WIFI_MODE_CMD:                                   //选择smartconfig/AP模式(wifi返回成功)  
+                  set_wifimode_flag = SET_WIFICONFIG_SUCCESS;
+                  break;
+              #endif
+                  
+                case DATA_QUERT_CMD:                                  //命令下发
+                  total_len = wifi_uart_rx_buf[offset + LENGTH_HIGH] * 0x100;
+                  total_len += wifi_uart_rx_buf[offset + LENGTH_LOW];
+                  
+                  for(i = 0;i < total_len;)
+                  {
+                    dp_len = wifi_uart_rx_buf[offset + DATA_START + i + 2] * 0x100;
+                    dp_len += wifi_uart_rx_buf[offset + DATA_START + i + 3];
+                    //
+                    ret = data_point_handle((unsigned char *)wifi_uart_rx_buf + offset + DATA_START + i);
+                    
+                    if(SUCCESS == ret)
+                    {
+                      //成功提示
+                    }
+                    else
+                    {
+C51 COMPILER V9.52.0.0   UARTCOM                                                           07/02/2018 10:17:03 PAGE 5   
+
+                      //错误提示
+                    }
+                    
+                    i += (dp_len + 4);
+                  }
+                  
+                  break;
+                  
+                case STATE_QUERY_CMD:                                 //状态查询
+                  all_data_update();                               
+                  break;
+                  
+              #ifdef SUPPORT_MCU_FIRM_UPDATE
+                case UPDATE_START_CMD:                                //升级开始
+                  firm_length = wifi_uart_rx_buf[offset + DATA_START];
+                  firm_length <<= 8;
+                  firm_length |= wifi_uart_rx_buf[offset + DATA_START + 1];
+                  firm_length <<= 8;
+                  firm_length |= wifi_uart_rx_buf[offset + DATA_START + 2];
+                  firm_length <<= 8;
+                  firm_length |= wifi_uart_rx_buf[offset + DATA_START + 3];
+                  //
+                  wifi_uart_write_frame(UPDATE_START_CMD,0);
+                  firm_update_flag = UPDATE_START_CMD;
+                   break;
+                  
+                case UPDATE_TRANS_CMD:                                //升级传输
+                  if(firm_update_flag == UPDATE_START_CMD)
+                  {
+                    //停止一切数据上报
+                    stop_update_flag = ENABLE;                                                 
+                    
+                    total_len = wifi_uart_rx_buf[offset + LENGTH_HIGH] * 0x100;
+                    total_len += wifi_uart_rx_buf[offset + LENGTH_LOW];
+                    
+                    dp_len = wifi_uart_rx_buf[offset + DATA_START];
+                    dp_len <<= 8;
+                    dp_len |= wifi_uart_rx_buf[offset + DATA_START + 1];
+                    dp_len <<= 8;
+                    dp_len |= wifi_uart_rx_buf[offset + DATA_START + 2];
+                    dp_len <<= 8;
+                    dp_len |= wifi_uart_rx_buf[offset + DATA_START + 3];
+                    
+                    firmware_addr = (unsigned char *)wifi_uart_rx_buf;
+                    firmware_addr += (offset + DATA_START + 4);
+                    if((total_len == 4) && (dp_len == firm_length))
+                    {
+                      //最后一包
+                      ret = mcu_firm_update_handle(firmware_addr,dp_len,0);
+                      
+                      firm_update_flag = 0;
+                    }
+                    else if((total_len - 4) <= FIRM_UPDATA_SIZE)
+                    {
+                      ret = mcu_firm_update_handle(firmware_addr,dp_len,total_len - 4);
+                    }
+                    else
+                    {
+                      firm_update_flag = 0;
+                      ret = ERROR;
+                    }
+                    
+C51 COMPILER V9.52.0.0   UARTCOM                                                           07/02/2018 10:17:03 PAGE 6   
+
+                    if(ret == SUCCESS)
+                    {
+                      wifi_uart_write_frame(UPDATE_TRANS_CMD,0);
+                    }
+                    //恢复一切数据上报
+                    stop_update_flag = DISABLE;    
+                  }
+                  break;
+              #endif      
+                  
+              #ifdef SUPPORT_MCU_RTC_CHECK
+                case GET_LOCAL_TIME_CMD:                             //获取本地时间
+                    mcu_write_rtctime(wifi_uart_rx_buf + offset + DATA_START);
+                  break;
+              #endif
+               
+              #ifdef WIFI_TEST_ENABLE
+                case WIFI_TEST_CMD:                                   //wifi功能测试
+                  result = wifi_uart_rx_buf[offset + DATA_START];
+                  rssi = wifi_uart_rx_buf[offset + DATA_START + 1];
+                  wifi_test_result(result, rssi);
+                  break;
+              #endif
+              #endif 
+ 327   2        default:
+ 328   2          break;
+ 329   2       }
+ 330   1      }
+ 331          static void HeatBeatCheck(void)
+ 332          {
+ 333   1        uint8 XDATA length = 1;
+ 334   1        static uint8 XDATA resetState = FALSE;
+ 335   1        
+ 336   1        if(FALSE == resetState)
+ 337   1        {
+ 338   2          SetTxPacketData(&resetState, length);
+ 339   2          resetState = TRUE;
+ 340   2        }
+ 341   1        else
+ 342   1        {
+ 343   2          SetTxPacketData(&resetState, length);
+ 344   2        }
+ 345   1      }
+ 346          /*
+ 347          static void product_info_update(void)
+ 348          {
+ 349            unsigned char length = 0;
+ 350            
+ 351            length = set_wifi_uart_buffer(length,(unsigned char *)PRODUCT_KEY,my_strlen((unsigned char *)PRODUCT_KEY
+             -));
+ 352            length = set_wifi_uart_buffer(length,(unsigned char *)MCU_VER,my_strlen((unsigned char *)MCU_VER));
+ 353            
+ 354            wifi_uart_write_frame(PRODUCT_INFO_CMD, length);
+ 355          }*/
+ 356          static void ProductInfoUpdate(void)
+ 357          {
+ 358   1        uint8 XDATA len = my_strlen((uint8 const*)PRODUCT_INFO);
+ 359   1        SetTxPacketData((uint8 const* const)(PRODUCT_INFO), my_strlen((uint8 *)PRODUCT_INFO));
+ 360   1      UartSendHexBuffer(UART_WIFI, "PRODUCT_INFO_Len:", (const uint8 XDATA* const)(&len), 1, ' ', true);
+ 361   1      
+ 362   1      
+ 363   1      }
+C51 COMPILER V9.52.0.0   UARTCOM                                                           07/02/2018 10:17:03 PAGE 7   
+
+ 364          
+ 365          static void SetTxPacketData(uint8 const* const d, uint8 XDATA length)
+ 366          {
+ 367   1        my_memcpy(&isrCfg.txPack.dat, d, length);
+ 368   1        isrCfg.txLength = length;
+ 369   1      }
+ 370          static void SendTxPacketData(uint8 XDATA cmd)
+ 371          {
+ 372   1        uint8 XDATA txLength = isrCfg.txLength+6;
+ 373   1        isrCfg.txPack.cmd = cmd;
+ 374   1        isrCfg.txPack.length[0] = HI_UINT16(isrCfg.txLength);
+ 375   1        isrCfg.txPack.length[1] = LO_UINT16(isrCfg.txLength);
+ 376   1        isrCfg.txPack.dat[isrCfg.txLength] = getCheckSum((uint8 const *)&isrCfg.txPack.head_0, txLength++);
+ 377   1      //  UartSendBuffer(UART_WIFI, (const uint8 *const)&isrCfg.txPack.head_0, txLength);
+ 378   1        UartSendHexBuffer(UART_WIFI, "res:", (const uint8 *const)&isrCfg.txPack.head_0, txLength, ' ', true);
+ 379   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    857    ----
+   CONSTANT SIZE    =    110    ----
+   XDATA SIZE       =     69      35
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       4
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

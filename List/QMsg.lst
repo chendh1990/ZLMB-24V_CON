@@ -1,0 +1,269 @@
+C51 COMPILER V9.52.0.0   QMSG                                                              07/10/2018 10:50:11 PAGE 1   
+
+
+C51 COMPILER V9.52.0.0, COMPILATION OF MODULE QMSG
+OBJECT MODULE PLACED IN .\Output\QMsg.obj
+COMPILER INVOKED BY: D:\Program Files\Keil\C51\BIN\C51.EXE Source\QMsg.c BROWSE INCDIR(.\Include;.\Bsp) DEFINE(FOSC_1600
+                    -00) DEBUG OBJECTEXTEND PRINT(.\List\QMsg.lst) TABS(2) OBJECT(.\Output\QMsg.obj)
+
+line level    source
+
+   1          #define __QMSG_C__
+   2          #include "QMsg.h"
+   3          #include "Common.h"
+   4          #include "Log.h"
+   5          
+   6          #if 0
+              uint8 QMsgInit(MSG_Q_t XDATA *const this, const MSG_t XDATA *const msgBuffer, uint8 cap)
+              {
+                if(!this)
+                {
+                  return 1;
+                }
+                if(!msgBuffer)
+                {
+                  return 2;
+                }
+                if(cap == 0)
+                {
+                  return 3;
+                }
+                g_QMsg.pStart = msgBuffer;
+                g_QMsg.pEnd = msgBuffer + cap;
+                g_QMsg.In = 0;
+                g_QMsg.Out = 0;
+                g_QMsg.Size = 0;
+                g_QMsg.Capacity = cap;
+                return 0;
+              }
+              uint8 QMsgPost(MSG_Q_t XDATA *const this, MSG_t msg)
+              {
+                if(!this)
+                {
+                  Log("--[QMsgPost] this is null\r\n");
+                  Log("--[QMsgPost] this = %x\r\n", (uint16)this);
+                  Log("--[QMsgPost] &g_Qmsg = %x\r\n", (uint16)(&g_QMsg));
+                  return 1;
+                }
+                if(g_QMsg.Size < g_QMsg.Capacity)
+                {
+                  if(g_QMsg.In >= g_QMsg.Capacity)
+                  {
+                    g_QMsg.In = 0;
+                  }
+                  g_QMsg.pStart[g_QMsg.In].msgID = msg.msgID;
+                  g_QMsg.pStart[g_QMsg.In].Param = msg.Param;
+                  g_QMsg.In++;
+                  ENTER_CRITICAL();
+                  g_QMsg.Size++;  
+                  EXIT_CRITICAL();
+                  //Log("QMsgPost: this = %x\r\n", this);
+                  //Log("QMsgPost:&g_Qmsg = %x\r\n", &g_QMsg);
+                  //Log("QMsgPost Qmsgid=%d, Qparam=%d\r\n", (uint16)(g_QMsg.pStart[g_QMsg.In-1].msgID), (uint16)(g_QMsg.p
+             -Start[g_QMsg.In-1].Param));
+                  //Log("QMsgPost msgid=%d, param=%d\r\n", (uint16)(msg.msgID), (uint16)(msg.Param));
+C51 COMPILER V9.52.0.0   QMSG                                                              07/10/2018 10:50:11 PAGE 2   
+
+                  //Log("\r\n\tINT QMsgPost QSize:%d\r\n", (uint16)(g_QMsg.Size));
+                  //Log("QMsgPost QIn:%d\r\n\r\n", (uint16)(g_QMsg.In));
+                  return 0;
+                }
+                return 2;
+              }
+              
+              uint8 QMsgPend(  MSG_Q_t XDATA *const this, MSG_t XDATA *const pMsg)
+              {
+                MSG_t msg;
+                
+                Log("\r\n**[QMsgPend] this = %x\r\n", (uint16)this);
+                Log("**[QMsgPend] &g_Qmsg = %x\r\n", (uint16)(&g_QMsg));
+                Log("**[QMsgPend] sizeof(this)=%d\r\n", (uint16)sizeof(this));
+                if((!this) || (this == null))
+                {
+                  Log("--[QMsgPend] this is null\r\n");
+                  Log("--[QMsgPend] this = %x\r\n", (uint16)this);
+                  Log("--[QMsgPend] &g_Qmsg = %x\r\n", (uint16)(&g_QMsg));
+                  return 1;
+                }
+                if(!pMsg)
+                {
+                  return 2;
+                }
+                if(g_QMsg.Size > 0)
+                {
+                  if(g_QMsg.Out >= g_QMsg.Capacity)
+                  {
+                    g_QMsg.Out = 0;
+                  }
+                  pMsg->msgID = g_QMsg.pStart[g_QMsg.Out].msgID;
+                  pMsg->Param = g_QMsg.pStart[g_QMsg.Out].Param;
+                  msg.msgID = g_QMsg.pStart[g_QMsg.Out].msgID;
+                  msg.Param = g_QMsg.pStart[g_QMsg.Out].Param;
+                  g_QMsg.Out++;
+                  ENTER_CRITICAL();
+                  g_QMsg.Size--;  
+                  EXIT_CRITICAL();
+                  
+                  Log("\t[QMsgPend] this = %x\r\n", (uint16)this);
+                  Log("\t[QMsgPend] &g_Qmsg = %x\r\n", (uint16)(&g_QMsg));
+                  Log("\t[QMsgPend] Qmsgid=%d, Qparam=%d\r\n", (uint16)(g_QMsg.pStart[g_QMsg.Out-1].msgID), (uint16)(g_QMs
+             -g.pStart[g_QMsg.Out-1].Param));
+                  Log("\t[QMsgPend] msgid=%d, param=%d\r\n", (uint16)(pMsg->msgID), (uint16)(pMsg->Param));
+                  Log("\t[QMsgPend] interal msgid=%d, param=%d\r\n", (uint16)(msg.msgID), (uint16)(msg.Param));
+                  Log("\t[QMsgPend] QSize:%d\r\n", (uint16)(g_QMsg.Size));
+                  Log("\t[QMsgPend] QOut:%d\r\n\r\n", (uint16)(g_QMsg.Out));
+                  return 0;
+                }
+                return 3;
+              }
+              
+              uint8 QMsgSize(const MSG_Q_t XDATA *const this)
+              {
+                if(!this)
+                {
+                  return 0;
+                }
+                return g_QMsg.Size;
+              }
+              uint8 QMsgCapacity(const MSG_Q_t XDATA *const this)
+C51 COMPILER V9.52.0.0   QMSG                                                              07/10/2018 10:50:11 PAGE 3   
+
+              {
+                if(!this)
+                {
+                  return 0;
+                }
+                return g_QMsg.Capacity;
+              }
+              #else
+ 123          uint8 QMsgInit(MSG_Q_t XDATA *const this, const MSG_t XDATA *const msgBuffer, uint8 cap)
+ 124          {
+ 125   1        if(!this)
+ 126   1        {
+ 127   2          return 1;
+ 128   2        }
+ 129   1        if(!msgBuffer)
+ 130   1        {
+ 131   2          return 2;
+ 132   2        }
+ 133   1        if(cap == 0)
+ 134   1        {
+ 135   2          return 3;
+ 136   2        }
+ 137   1        g_QMsg.pStart = msgBuffer;
+ 138   1        g_QMsg.pEnd = msgBuffer + cap;
+ 139   1        g_QMsg.In = 0;
+ 140   1        g_QMsg.Out = 0;
+ 141   1        g_QMsg.Size = 0;
+ 142   1        g_QMsg.Capacity = cap;
+ 143   1        return 0;
+ 144   1      }
+ 145          uint8 QMsgPostSimple(MSG_Q_t XDATA *const this, uint16 XDATA msgID, uint16 XDATA param)
+ 146          {
+ 147   1        if(!this)
+ 148   1        {
+ 149   2          return 1;
+ 150   2        }
+ 151   1        if(g_QMsg.Size < g_QMsg.Capacity)
+ 152   1        {
+ 153   2          if(g_QMsg.In >= g_QMsg.Capacity)
+ 154   2          {
+ 155   3            g_QMsg.In = 0;
+ 156   3          }
+ 157   2          g_QMsg.pStart[g_QMsg.In].msgID = msgID;
+ 158   2          g_QMsg.pStart[g_QMsg.In].Param = param;
+ 159   2          g_QMsg.In++;
+ 160   2          ENTER_CRITICAL();
+ 161   2          g_QMsg.Size++;  
+ 162   2          EXIT_CRITICAL();
+ 163   2          return 0;
+ 164   2        }
+ 165   1        return 2;
+ 166   1      }
+ 167          uint8 QMsgPost(MSG_Q_t XDATA *const this, MSG_t msg)
+ 168          {
+ 169   1        if(!this)
+ 170   1        {
+ 171   2          return 1;
+ 172   2        }
+ 173   1        if(g_QMsg.Size < g_QMsg.Capacity)
+ 174   1        {
+ 175   2          if(g_QMsg.In >= g_QMsg.Capacity)
+ 176   2          {
+C51 COMPILER V9.52.0.0   QMSG                                                              07/10/2018 10:50:11 PAGE 4   
+
+ 177   3            g_QMsg.In = 0;
+ 178   3          }
+ 179   2          g_QMsg.pStart[g_QMsg.In].msgID = msg.msgID;
+ 180   2          g_QMsg.pStart[g_QMsg.In].Param = msg.Param;
+ 181   2          g_QMsg.In++;
+ 182   2          ENTER_CRITICAL();
+ 183   2          g_QMsg.Size++;  
+ 184   2          EXIT_CRITICAL();
+ 185   2          return 0;
+ 186   2        }
+ 187   1        return 2;
+ 188   1      }
+ 189          
+ 190          uint8 QMsgPend(  MSG_Q_t XDATA *const this, MSG_t XDATA *const pMsg)
+ 191          { 
+ 192   1        if((!this) || (this == null))
+ 193   1        {
+ 194   2          return 1;
+ 195   2        }
+ 196   1        if(!pMsg)
+ 197   1        {
+ 198   2          return 2;
+ 199   2        }
+ 200   1        if(g_QMsg.Size > 0)
+ 201   1        {
+ 202   2          if(g_QMsg.Out >= g_QMsg.Capacity)
+ 203   2          {
+ 204   3            g_QMsg.Out = 0;
+ 205   3          }
+ 206   2          pMsg->msgID = g_QMsg.pStart[g_QMsg.Out].msgID;
+ 207   2          pMsg->Param = g_QMsg.pStart[g_QMsg.Out].Param;
+ 208   2          g_Msg.msgID = g_QMsg.pStart[g_QMsg.Out].msgID;
+ 209   2          g_Msg.Param = g_QMsg.pStart[g_QMsg.Out].Param;
+ 210   2          g_QMsg.Out++;
+ 211   2          ENTER_CRITICAL();
+ 212   2          g_QMsg.Size--;  
+ 213   2          EXIT_CRITICAL();
+ 214   2          return 0;
+ 215   2        }
+ 216   1        return 3;
+ 217   1      }
+ 218          
+ 219          uint8 QMsgSize(const MSG_Q_t XDATA *const this)
+ 220          {
+ 221   1        if(!this)
+ 222   1        {
+ 223   2          return 0;
+ 224   2        }
+ 225   1        return g_QMsg.Size;
+ 226   1      }
+ 227          uint8 QMsgCapacity(const MSG_Q_t XDATA *const this)
+ 228          {
+ 229   1        if(!this)
+ 230   1        {
+ 231   2          return 0;
+ 232   2        }
+ 233   1        return g_QMsg.Capacity;
+ 234   1      }
+ 235          #endif
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+C51 COMPILER V9.52.0.0   QMSG                                                              07/10/2018 10:50:11 PAGE 5   
+
+   CODE SIZE        =    535    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     94    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      13
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

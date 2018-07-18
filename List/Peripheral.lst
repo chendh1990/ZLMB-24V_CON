@@ -1,0 +1,305 @@
+C51 COMPILER V9.52.0.0   PERIPHERAL                                                        07/10/2018 10:50:11 PAGE 1   
+
+
+C51 COMPILER V9.52.0.0, COMPILATION OF MODULE PERIPHERAL
+OBJECT MODULE PLACED IN .\Output\Peripheral.obj
+COMPILER INVOKED BY: D:\Program Files\Keil\C51\BIN\C51.EXE Source\Peripheral.c BROWSE INCDIR(.\Include;.\Bsp) DEFINE(FOS
+                    -C_160000) DEBUG OBJECTEXTEND PRINT(.\List\Peripheral.lst) TABS(2) OBJECT(.\Output\Peripheral.obj)
+
+line level    source
+
+   1          #define __PERIPHERAL_C__
+   2          
+   3          #include "N76E003.h"
+   4          #include "Function_define.h"
+   5          #include "Typedef.h"
+   6          #include "Key.h"
+   7          #include "Led.h"
+   8          #include "Sys.h"
+   9          #include "Peripheral.h"
+  10          #include "Wifi.h"
+  11          #include "Log.h"
+  12          
+  13          
+  14          static void JKInit(void)
+  15          {
+  16   1        P00_PushPull_Mode;
+  17   1        P10_PushPull_Mode;
+  18   1      }
+  19          void PeriphralInit(void)
+  20          {
+  21   1        KeyInit();
+  22   1        LedInit(); 
+  23   1        JKInit();
+  24   1        LED_PAUSE_OFF;
+  25   1        LED_WIFI_OFF;
+  26   1        JK1_CTR_ON;
+  27   1        JK2_CTR_OFF;
+  28   1      }
+  29          
+  30          void MotorCtr(uint8 ch, uint8 cmd)
+  31          {
+  32   1        if(ch == 0)
+  33   1        {
+  34   2          switch (cmd)
+  35   2          {
+  36   3            case MOTOR_POS_TURN:  //电机正转
+  37   3              JK1_CTR_OFF;
+  38   3              JK2_CTR_OFF;
+  39   3              break;
+  40   3            case MOTOR_NEG_TURN:  //电机反转
+  41   3              JK1_CTR_ON;
+  42   3              JK2_CTR_ON;
+  43   3              break;
+  44   3            case MOTOR_STOP_TURN: //电机停转
+  45   3              JK1_CTR_OFF;
+  46   3              JK2_CTR_ON;
+  47   3              break;
+  48   3            default:
+  49   3              break;
+  50   3          }
+  51   2        }
+  52   1      }
+  53          
+  54          void WindowHandle(const MSG_t *const pMsg)
+C51 COMPILER V9.52.0.0   PERIPHERAL                                                        07/10/2018 10:50:11 PAGE 2   
+
+  55          {
+  56   1        uint16 XDATA TO;
+  57   1        static uint16 XDATA TObak;
+  58   1        MSG_t XDATA msg;
+  59   1        if(!pMsg)
+  60   1        {
+  61   2          return ;
+  62   2        }
+  63   1      //  Log("msgParm:%bx\r\n", (uint8)(pMsg->Param));
+  64   1        switch (pMsg->Param)
+  65   1        {
+  66   2          case WINDOW_OPENING:      //正在打开
+  67   2            Log("WINDOW_OPENING\r\n");
+  68   2            if(g_RunState[0].BitState.wait)
+  69   2            {
+  70   3              break;
+  71   3            }
+  72   2            if(g_RunState[0].BitState.pause)    //暂停状态 -> 打开运行状态
+  73   2            {
+  74   3              if(g_RunState[0].BitState.opening) //打开运行状态-> 暂停状态 -> 打开运行状态
+  75   3              {
+  76   4                MotorCtr(0, MOTOR_POS_TURN);  
+  77   4                TimerUnitEnable(&g_TimerServer, TIMER_WINDOW_CTR_ID, true);
+  78   4              }
+  79   3              if(g_RunState[0].BitState.closing) //关闭运行状态-> 暂停状态 -> 打开运行状态
+  80   3              {
+  81   4                TO = WINDOW_CTL_TIME - TimerUnitGetTO(&g_TimerServer, TIMER_WINDOW_CTR_ID);         
+  82   4                msg.msgID = SYS_MSG_WINDOW_ID;
+  83   4                msg.Param = WINDOW_OPENED;
+  84   4                TimerUnitAdd(&g_TimerServer, TIMER_WINDOW_CTR_ID, &g_QMsg, &msg, TO);
+  85   4                MotorCtr(0, MOTOR_POS_TURN);
+  86   4              }
+  87   3              g_RunState[0].sta = 0;
+  88   3              g_RunState[0].BitState.opening = 1;
+  89   3                  
+  90   3              LedSetLevel(LED_CLOSE_ID, LOW, true);
+  91   3              LedSetLevel(LED_OPEN_ID, HIGH, true);
+  92   3              LedSetLevel(LED_PAUSE_ID, LOW, true);
+  93   3            }
+  94   2            else
+  95   2            {
+  96   3              if((g_RunState[0].BitState.closed) || (g_RunState[0].BitState.closing)) //从关闭或关闭运行状态到打开运
+             -行状态
+  97   3              {
+  98   4                if(g_RunState[0].BitState.closed) //关闭状态 -> 打开运行状态
+  99   4                {
+ 100   5                  TO = WINDOW_CTL_TIME;
+ 101   5                  msg.msgID = SYS_MSG_WINDOW_ID;
+ 102   5                  msg.Param = WINDOW_OPENED;
+ 103   5                  TimerUnitAdd(&g_TimerServer, TIMER_WINDOW_CTR_ID, &g_QMsg, &msg, TO);
+ 104   5                  MotorCtr(0, MOTOR_POS_TURN);
+ 105   5                }
+ 106   4                else    //关闭运行状态 -> 打开运行状态
+ 107   4                {
+ 108   5                  TObak = WINDOW_CTL_TIME - TimerUnitGetTO(&g_TimerServer, TIMER_WINDOW_CTR_ID);
+ 109   5                  TO = WINDOW_WAIT_TIME;
+ 110   5                  msg.msgID = SYS_MSG_WINDOW_ID;
+ 111   5                  msg.Param = WINDOW_WAIT;
+ 112   5                  TimerUnitAdd(&g_TimerServer, TIMER_WINDOW_CTR_ID, &g_QMsg, &msg, TO);
+ 113   5                  MotorCtr(0, MOTOR_STOP_TURN);
+ 114   5                  g_RunState[0].BitState.wait = 1;
+ 115   5                }
+C51 COMPILER V9.52.0.0   PERIPHERAL                                                        07/10/2018 10:50:11 PAGE 3   
+
+ 116   4                g_RunState[0].sta = 0;
+ 117   4                g_RunState[0].BitState.opening = 1;
+ 118   4                
+ 119   4                LedSetLevel(LED_CLOSE_ID, LOW, true);
+ 120   4                LedSetLevel(LED_OPEN_ID, HIGH, true);
+ 121   4              }
+ 122   3            }
+ 123   2            break;
+ 124   2          case WINDOW_CLOSING:    //正在关闭
+ 125   2            Log("WINDOW_CLOSING\r\n");
+ 126   2            if(g_RunState[0].BitState.wait)
+ 127   2            {
+ 128   3              break;
+ 129   3            }
+ 130   2            if(g_RunState[0].BitState.pause)    //暂停状态 -> 关闭运行状态
+ 131   2            {
+ 132   3              if(g_RunState[0].BitState.closing) //关闭运行状态-> 暂停状态 -> 关闭运行状态
+ 133   3              {
+ 134   4                MotorCtr(0, MOTOR_NEG_TURN);  
+ 135   4                TimerUnitEnable(&g_TimerServer, TIMER_WINDOW_CTR_ID, true);
+ 136   4              }
+ 137   3              if(g_RunState[0].BitState.opening) //打开运行状态-> 暂停状态 -> 关闭运行状态
+ 138   3              {
+ 139   4                TO = WINDOW_CTL_TIME - TimerUnitGetTO(&g_TimerServer, TIMER_WINDOW_CTR_ID);         
+ 140   4                msg.msgID = SYS_MSG_WINDOW_ID;
+ 141   4                msg.Param = WINDOW_CLOSED;
+ 142   4                TimerUnitAdd(&g_TimerServer, TIMER_WINDOW_CTR_ID, &g_QMsg, &msg, TO);
+ 143   4                MotorCtr(0, MOTOR_NEG_TURN);
+ 144   4              }
+ 145   3              g_RunState[0].sta = 0;
+ 146   3              g_RunState[0].BitState.closing = 1;
+ 147   3              
+ 148   3              LedSetLevel(LED_OPEN_ID, LOW, true);
+ 149   3              LedSetLevel(LED_CLOSE_ID, HIGH, true);
+ 150   3              LedSetLevel(LED_PAUSE_ID, LOW, true);
+ 151   3            }
+ 152   2            else
+ 153   2            {
+ 154   3              if((g_RunState[0].BitState.opened) || (g_RunState[0].BitState.opening)) //从打开或打开运行状态到关闭运
+             -行状态
+ 155   3              {
+ 156   4                if(g_RunState[0].BitState.opened)
+ 157   4                {
+ 158   5                  TO = WINDOW_CTL_TIME;
+ 159   5                  msg.msgID = SYS_MSG_WINDOW_ID;
+ 160   5                  msg.Param = WINDOW_CLOSED;
+ 161   5                  TimerUnitAdd(&g_TimerServer, TIMER_WINDOW_CTR_ID, &g_QMsg, &msg, TO);
+ 162   5                  MotorCtr(0, MOTOR_NEG_TURN);
+ 163   5                }
+ 164   4                else      //打开运行状态 -> 关闭运行状态
+ 165   4                {
+ 166   5                  TObak = WINDOW_CTL_TIME - TimerUnitGetTO(&g_TimerServer, TIMER_WINDOW_CTR_ID);
+ 167   5      
+ 168   5                  TO = WINDOW_WAIT_TIME;
+ 169   5                  msg.msgID = SYS_MSG_WINDOW_ID;
+ 170   5                  msg.Param = WINDOW_WAIT;
+ 171   5                  TimerUnitAdd(&g_TimerServer, TIMER_WINDOW_CTR_ID, &g_QMsg, &msg, TO);
+ 172   5                  MotorCtr(0, MOTOR_STOP_TURN);
+ 173   5                  g_RunState[0].BitState.wait = 1;
+ 174   5                }
+ 175   4                g_RunState[0].sta = 0;
+ 176   4                g_RunState[0].BitState.closing = 1;
+C51 COMPILER V9.52.0.0   PERIPHERAL                                                        07/10/2018 10:50:11 PAGE 4   
+
+ 177   4                
+ 178   4                LedSetLevel(LED_OPEN_ID, LOW, true);
+ 179   4                LedSetLevel(LED_CLOSE_ID, HIGH, true);
+ 180   4              }
+ 181   3            }
+ 182   2            break;
+ 183   2            
+ 184   2          case WINDOW_OPENED:       //打开完成
+ 185   2            Log("WINDOW_OPENED\r\n");
+ 186   2            g_RunState[0].sta = 0;
+ 187   2            g_RunState[0].BitState.opened = 1;
+ 188   2            MotorCtr(0, MOTOR_STOP_TURN);
+ 189   2            QMsgPostSimple(&g_QMsg, SYS_MSG_WIFI_ID, WIFI_UPLOAD);
+ 190   2        
+ 191   2            LedSetLevel(LED_OPEN_ID, LOW, true);
+ 192   2            LedSetLevel(LED_CLOSE_ID, LOW, true);
+ 193   2            break;
+ 194   2            
+ 195   2          case WINDOW_CLOSED:       //关闭完成
+ 196   2            Log("WINDOW_CLOSED\r\n");
+ 197   2            g_RunState[0].sta = 0;
+ 198   2            g_RunState[0].BitState.closed = 1;
+ 199   2            MotorCtr(0, MOTOR_STOP_TURN);
+ 200   2            QMsgPostSimple(&g_QMsg, SYS_MSG_WIFI_ID, WIFI_UPLOAD);
+ 201   2            
+ 202   2            LedSetLevel(LED_OPEN_ID, LOW, true);
+ 203   2            LedSetLevel(LED_CLOSE_ID, LOW, true);
+ 204   2            break;
+ 205   2      
+ 206   2          case WINDOW_PAUSE:
+ 207   2            Log("WINDOW_PAUSE\r\n");
+ 208   2            if(g_RunState[0].BitState.pause)
+ 209   2            {
+ 210   3              Log("UnPause\r\n");
+ 211   3              if((g_RunState[0].BitState.opening) || (g_RunState[0].BitState.closing))
+ 212   3              {
+ 213   4                if(g_RunState[0].BitState.opening) //打开运行状态-> 暂停状态 ->           取消暂停 -> 打开运行状态
+ 214   4                {
+ 215   5                  MotorCtr(0, MOTOR_POS_TURN);  
+ 216   5                  LedSetLevel(LED_OPEN_ID, HIGH, true);
+ 217   5                  
+ 218   5                }
+ 219   4                else           //关闭运行状态-> 暂停状态 -> 取消暂停               -> 关闭运行状态
+ 220   4                {
+ 221   5                  MotorCtr(0, MOTOR_NEG_TURN);
+ 222   5                  LedSetLevel(LED_CLOSE_ID, HIGH, true);
+ 223   5                  
+ 224   5                }
+ 225   4                TimerUnitEnable(&g_TimerServer, TIMER_WINDOW_CTR_ID, true);
+ 226   4              }     
+ 227   3              g_RunState[0].BitState.pause = 0;     
+ 228   3              LedSetLevel(LED_PAUSE_ID, LOW, true);
+ 229   3            }
+ 230   2            else
+ 231   2            {
+ 232   3              if((g_RunState[0].BitState.opening) || (g_RunState[0].BitState.closing))
+ 233   3              {
+ 234   4                Log("Pause\r\n");
+ 235   4                g_RunState[0].BitState.pause = 1;
+ 236   4                MotorCtr(0, MOTOR_STOP_TURN); 
+ 237   4                TimerUnitEnable(&g_TimerServer, TIMER_WINDOW_CTR_ID, false);
+ 238   4                
+C51 COMPILER V9.52.0.0   PERIPHERAL                                                        07/10/2018 10:50:11 PAGE 5   
+
+ 239   4                LedSetLevel(LED_PAUSE_ID, HIGH, true);
+ 240   4                LedSetLevel(LED_OPEN_ID, LOW, true);
+ 241   4                LedSetLevel(LED_CLOSE_ID, LOW, true);
+ 242   4              }
+ 243   3            }
+ 244   2            break;
+ 245   2          case WINDOW_WAIT:
+ 246   2            if((g_RunState[0].BitState.opening) || (g_RunState[0].BitState.closing))
+ 247   2            {
+ 248   3              TO = TObak;
+ 249   3              msg.msgID = SYS_MSG_WINDOW_ID;
+ 250   3              if(g_RunState[0].BitState.opening)
+ 251   3              {
+ 252   4                msg.Param = WINDOW_OPENED;
+ 253   4                TimerUnitAdd(&g_TimerServer, TIMER_WINDOW_CTR_ID, &g_QMsg, &msg, TO); 
+ 254   4                MotorCtr(0, MOTOR_POS_TURN);
+ 255   4              }
+ 256   3              else
+ 257   3              {
+ 258   4                msg.Param = WINDOW_CLOSED;
+ 259   4                TimerUnitAdd(&g_TimerServer, TIMER_WINDOW_CTR_ID, &g_QMsg, &msg, TO); 
+ 260   4                MotorCtr(0, MOTOR_NEG_TURN);
+ 261   4              }
+ 262   3            }
+ 263   2            g_RunState[0].BitState.wait = 0;
+ 264   2            break;
+ 265   2            
+ 266   2          default:
+ 267   2            break;
+ 268   2        }
+ 269   1      }
+ 270          
+ 271          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1284    ----
+   CONSTANT SIZE    =     99    ----
+   XDATA SIZE       =      2       6
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

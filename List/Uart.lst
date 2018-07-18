@@ -1,0 +1,237 @@
+C51 COMPILER V9.52.0.0   UART                                                              07/10/2018 10:50:11 PAGE 1   
+
+
+C51 COMPILER V9.52.0.0, COMPILATION OF MODULE UART
+OBJECT MODULE PLACED IN .\Output\Uart.obj
+COMPILER INVOKED BY: D:\Program Files\Keil\C51\BIN\C51.EXE Bsp\Uart.c BROWSE INCDIR(.\Include;.\Bsp) DEFINE(FOSC_160000)
+                    - DEBUG OBJECTEXTEND PRINT(.\List\Uart.lst) TABS(2) OBJECT(.\Output\Uart.obj)
+
+line level    source
+
+   1          #define __UART_C__
+   2          #include <stdio.h>
+   3          #include <stdarg.h>
+   4          #include "Typedef.h"
+   5          #include "N76E003.h"
+   6          #include "SFR_Macro.h"
+   7          #include "Function_define.h"
+   8          #include "Common.h"
+   9          #include "Uart.h"
+  10          
+  11          
+  12          //----------------------------------------------------------------------------------
+  13          // UART0 baud rate initial setting 
+  14          //----------------------------------------------------------------------------------
+  15          static void InitialUART0_Timer1(UINT32 u32Baudrate)    //T1M = 1, SMOD = 1
+  16          {
+  17   1        P06_Quasi_Mode;   //Setting UART pin as Quasi mode for transmit
+  18   1        P07_Quasi_Mode;   //Setting UART pin as Quasi mode for transmit
+  19   1        
+  20   1          SCON = 0x50;      //UART0 Mode1,REN=1,TI=1
+  21   1          TMOD |= 0x20;     //Timer1 Mode1
+  22   1          
+  23   1          set_SMOD;         //UART0 Double Rate Enable
+  24   1          set_T1M;
+  25   1          clr_BRCK;         //Serial port 0 baud rate clock source = Timer1
+  26   1       
+  27   1      #ifdef FOSC_160000
+  28   1          TH1 = 256 - (1000000/u32Baudrate+1);               /*16 MHz */
+  29   1      #endif      
+  30   1      #ifdef FOSC_166000
+                  TH1 = 256 - (1037500/u32Baudrate);                 /*16.6 MHz */
+              #endif
+  33   1          set_TR1;
+  34   1        set_TI;           //For printf function must setting TI = 1
+  35   1      }
+  36          
+  37          //---------------------------------------------------------------
+  38          static void InitialUART0_Timer3(UINT32 u32Baudrate) //use timer3 as Baudrate generator
+  39          {
+  40   1        P06_Quasi_Mode;   //Setting UART pin as Quasi mode for transmit
+  41   1        P07_Quasi_Mode;   //Setting UART pin as Quasi mode for transmit 
+  42   1        
+  43   1          SCON = 0x50;     //UART0 Mode1,REN=1,TI=1
+  44   1          set_SMOD;        //UART0 Double Rate Enable
+  45   1          T3CON &= 0xF8;   //T3PS2=0,T3PS1=0,T3PS0=0(Prescale=1)
+  46   1          set_BRCK;        //UART0 baud rate clock source = Timer3
+  47   1      
+  48   1      #ifdef FOSC_160000
+  49   1          RH3    = HIBYTE(65536 - (1000000/u32Baudrate)-1);     /*16 MHz */
+  50   1          RL3    = LOBYTE(65536 - (1000000/u32Baudrate)-1);     /*16 MHz */
+  51   1      #endif
+  52   1      #ifdef FOSC_166000
+                  RH3    = HIBYTE(65536 - (1037500/u32Baudrate));       /*16.6 MHz */
+                  RL3    = LOBYTE(65536 - (1037500/u32Baudrate));       /*16.6 MHz */
+C51 COMPILER V9.52.0.0   UART                                                              07/10/2018 10:50:11 PAGE 2   
+
+              #endif
+  56   1          set_TR3;         //Trigger Timer3
+  57   1        set_TI;          //For printf function must setting TI = 1
+  58   1      }
+  59          
+  60          //----------------------------------------------------------------------------------
+  61          // UART1 baud rate initial setting 
+  62          //----------------------------------------------------------------------------------
+  63          static void InitialUART1_Timer3(UINT32 u32Baudrate) //use timer3 as Baudrate generator
+  64          {
+  65   1          P02_Quasi_Mode;   //Setting UART pin as Quasi mode for transmit
+  66   1          P16_Quasi_Mode;   //Setting UART pin as Quasi mode for transmit
+  67   1        
+  68   1          SCON_1 = 0x50;    //UART1 Mode1,REN_1=1,TI_1=1
+  69   1      //    T3CON = 0x08;     //T3PS2=0,T3PS1=0,T3PS0=0(Prescale=1), UART1 in MODE 1
+  70   1        //  clr_BRCK;
+  71   1        
+  72   1      #ifdef FOSC_160000
+  73   1          RH3    = HIBYTE(65536 - (1000000/u32Baudrate)-1);     /*16 MHz */
+  74   1          RL3    = LOBYTE(65536 - (1000000/u32Baudrate)-1);     /*16 MHz */
+  75   1      #endif
+  76   1      #ifdef FOSC_166000
+                  RH3    = HIBYTE(65536 - (1037500/u32Baudrate));       /*16.6 MHz */
+                  RL3    = LOBYTE(65536 - (1037500/u32Baudrate));       /*16.6 MHz */
+              #endif
+  80   1          set_TR3;         //Trigger Timer3
+  81   1          set_TI_1;
+  82   1      }
+  83          
+  84          static void InitialUART0_Int()
+  85          {
+  86   1      /**********************设置串口0位最高优先级********************/
+  87   1      //  IP |= BIT(4); //中断优先级低位
+  88   1      //  IPH |= BIT(4);  //中断优先级高位
+  89   1      /***************************************************************/
+  90   1      /***********************使能串口0中断***************************/
+  91   1        set_ES;   //使能串口0中断
+  92   1      /***************************************************************/
+  93   1      
+  94   1      /**************************使能总中断***************************/
+  95   1        set_EA;   //使能总中断
+  96   1      /***************************************************************/
+  97   1        
+  98   1      }
+  99          void UartInit(void)
+ 100          {   
+ 101   1        InitialUART0_Timer3(9600);
+ 102   1        InitialUART1_Timer3(9600);
+ 103   1        InitialUART0_Int();
+ 104   1      }
+ 105          #if 0 //printf for uart0
+              char putchar(char c)
+              {
+                while(!TI);  /* wait until transmitter ready */
+                TI = 0;
+                SBUF = c;      /* output character */
+                return (c);
+              }
+              char putchar_wifi(char c)
+              {
+                while(!TI_1);  /* wait until transmitter ready */
+                TI_1 = 0;
+C51 COMPILER V9.52.0.0   UART                                                              07/10/2018 10:50:11 PAGE 3   
+
+                SBUF_1 = c;      /* output character */
+                return (c);
+              }
+              
+              #else //printf for uart1
+ 122          char putchar_wifi(char c)
+ 123          {
+ 124   1        while(!TI);  /* wait until transmitter ready */
+ 125   1        TI = 0;
+ 126   1        SBUF = c;      /* output character */
+ 127   1        return (c);
+ 128   1      }
+ 129          char putchar(char c)
+ 130          {
+ 131   1        while(!TI_1);  /* wait until transmitter ready */
+ 132   1        TI_1 = 0;
+ 133   1        SBUF_1 = c;      /* output character */
+ 134   1        return (c);
+ 135   1      }
+ 136          #endif
+ 137          
+ 138          static void UartSendByte(UartPort_t Port, char c)
+ 139          {
+ 140   1        switch (Port)
+ 141   1        {
+ 142   2          case UART_WIFI:
+ 143   2            putchar_wifi(c);
+ 144   2            break;
+ 145   2          case UART_DEBUG:
+ 146   2            putchar(c);
+ 147   2            break;
+ 148   2          default:
+ 149   2            break;
+ 150   2        }
+ 151   1      }
+ 152          
+ 153          void UartSendString(UartPort_t Port, uint8 const *str)
+ 154          {
+ 155   1        if(!str)
+ 156   1        {
+ 157   2          return ;
+ 158   2        }
+ 159   1        while(*str)
+ 160   1        {
+ 161   2          UartSendByte(Port, *str++);
+ 162   2        }
+ 163   1      }
+ 164          void UartSendBuffer(UartPort_t Port, const uint8 *const Buffer, uint8 length)
+ 165          {
+ 166   1        uint8 i;
+ 167   1        for(i = 0; i < length; i++)
+ 168   1        {
+ 169   2          UartSendByte(Port, Buffer[i]);
+ 170   2        }
+ 171   1      }
+ 172          void UartSendHexBuffer(UartPort_t Port, const uint8 *des, const uint8 *const buf , uint8 len, uint8 dec, u
+             -int8 en)
+ 173          {
+ 174   1        uint8 i;
+ 175   1        uint8 MSB;
+ 176   1        uint8 LSB;
+ 177   1        if(des)
+C51 COMPILER V9.52.0.0   UART                                                              07/10/2018 10:50:11 PAGE 4   
+
+ 178   1        {
+ 179   2          UartSendString(Port, des);
+ 180   2        }
+ 181   1        for(i = 0; i < len; i++)
+ 182   1        {
+ 183   2          MSB = getHex(HI_UINT8(buf[i]));
+ 184   2          LSB = getHex(LO_UINT8(buf[i]));
+ 185   2          UartSendByte(Port, MSB);
+ 186   2          UartSendByte(Port, LSB);
+ 187   2          UartSendByte(Port, dec);
+ 188   2        }
+ 189   1      
+ 190   1        if(en)
+ 191   1        {
+ 192   2          UartSendByte(Port, '\r');
+ 193   2          UartSendByte(Port, '\n');
+ 194   2        }
+ 195   1      }
+ 196          
+ 197          void MyPrintf(const char *fmt, ...)
+ 198          {
+ 199   1        va_list ap;
+ 200   1        uint8 XDATA string[100];
+ 201   1        va_start(ap, fmt);  
+ 202   1        vsprintf(string, fmt, ap);//此处也可以使用sprintf函数，用法差不多，稍加修改即可，此处略去
+ 203   1        va_end(ap);   
+ 204   1        UartSendString(UART_DEBUG, string);
+ 205   1        //UartSendString(UART_WIFI, string);
+ 206   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    571    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----     100
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      49
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
