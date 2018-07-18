@@ -1,6 +1,0 @@
----- AllDataUpdate Matches (5 in 1 files) ----
-Wifi.c line 28 : static void AllDataUpdate(void);
-Wifi.c line 32 : static void AllDataUpdate(void);
-WifiPacketHandle in Wifi.c : 	AllDataUpdate();
-WifiPacketHandle in Wifi.c :     AllDataUpdate();
-Wifi.c line 486 : static void AllDataUpdate(void)
