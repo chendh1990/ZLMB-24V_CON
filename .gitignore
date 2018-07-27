@@ -2,3 +2,9 @@
 /List
 /Output
 /SiPro
+*.plg
+*.ini
+*.cdh
+*.bak
+*.uvopt
+*.uvproj
