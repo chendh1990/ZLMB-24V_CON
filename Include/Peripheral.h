@@ -51,7 +51,7 @@
 
 
 #define WINDOW_CTL_TIME		SEC(20)
-#define WINDOW_WAIT_TIME	SEC(10)
+#define WINDOW_WAIT_TIME	SEC(1)
 
 /***********************数据结构定义************************/
 

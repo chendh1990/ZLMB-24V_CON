@@ -79,14 +79,14 @@ void SystemStatusMachine(unsigned char SystemStatus)
 static void SystemInitStatus(void)
 {
 	UartInit();
+	PeriphralInit();
+	TimerInit();
 	QueueInit();
 	WifiInit();
 	TimerUnitInit(&g_TimerServer);
 	QMsgInit(&g_QMsg, &g_MsgArray, MSG_NUM_MAX);
 	ShowSoftInfo();
 	
-	PeriphralInit();
-	TimerInit();
 	QMsgPostSimple(&g_QMsg, SYS_MSG_INIT_ID, 0);
 	g_SystemVar.SystemCurrentStatus = SYSTEM_RUN_STATUS;
 }
@@ -104,8 +104,6 @@ static void SystemRunStatus(void)
 				case SYS_MSG_INIT_ID:	
 					g_RunState[0].sta = 0;
 					g_RunState[0].BitState.closed = 1;
-				
-					QMsgPostSimple(&g_QMsg, SYS_MSG_WINDOW_ID, WINDOW_OPENING);
 					break;
 					
 				default:

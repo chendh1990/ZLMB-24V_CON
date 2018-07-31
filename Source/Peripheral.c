@@ -23,8 +23,8 @@ void PeriphralInit(void)
 	JKInit();
 	LED_PAUSE_OFF;
 	LED_WIFI_OFF;
-	JK1_CTR_ON;
-	JK2_CTR_OFF;
+	JK1_CTR_OFF;
+	JK2_CTR_ON;
 }
 
 void MotorCtr(uint8 ch, uint8 cmd)
@@ -215,7 +215,6 @@ void WindowHandle(const MSG_t *const pMsg)
 			LedSetLevel(LED_OPEN_ID, LOW, true);
 			LedSetLevel(LED_CLOSE_ID, LOW, true);
 			
-			QMsgPostSimple(&g_QMsg, SYS_MSG_WINDOW_ID, WINDOW_CLOSING);
 			break;
 			
 		case WINDOW_CLOSED:				//πÿ±’ÕÍ≥…
@@ -228,7 +227,6 @@ void WindowHandle(const MSG_t *const pMsg)
 			LedSetLevel(LED_OPEN_ID, LOW, true);
 			LedSetLevel(LED_CLOSE_ID, LOW, true);
 			
-			QMsgPostSimple(&g_QMsg, SYS_MSG_WINDOW_ID, WINDOW_OPENING);
 			break;
 
 		case WINDOW_PAUSE:
