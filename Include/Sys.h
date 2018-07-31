@@ -59,6 +59,8 @@ typedef	struct
 {
 	uint8 opened: 1;
 	uint8 closed: 1;
+	uint8 open: 1;
+	uint8 close: 1;
 	uint8 opening: 1;
 	uint8 closing: 1;
 	uint8 pause: 1;

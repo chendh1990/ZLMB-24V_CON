@@ -104,6 +104,8 @@ static void SystemRunStatus(void)
 				case SYS_MSG_INIT_ID:	
 					g_RunState[0].sta = 0;
 					g_RunState[0].BitState.closed = 1;
+				
+					QMsgPostSimple(&g_QMsg, SYS_MSG_WINDOW_ID, WINDOW_OPENING);
 					break;
 					
 				default:

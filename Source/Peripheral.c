@@ -65,7 +65,7 @@ void WindowHandle(const MSG_t *const pMsg)
 	{
 		case WINDOW_OPENING:			//正在打开
 			Log("WINDOW_OPENING\r\n");
-			if(g_RunState[0].BitState.wait)
+			if((g_RunState[0].BitState.wait) || (g_RunState[0].BitState.open) || ((g_RunState[0].BitState.close)))
 			{
 				break;
 			}
@@ -80,7 +80,7 @@ void WindowHandle(const MSG_t *const pMsg)
 				{
 					TO = WINDOW_CTL_TIME - TimerUnitGetTO(&g_TimerServer, TIMER_WINDOW_CTR_ID);					
 					msg.msgID = SYS_MSG_WINDOW_ID;
-					msg.Param = WINDOW_OPENED;
+					msg.Param = WINDOW_OPEN;
 					TimerUnitAdd(&g_TimerServer, TIMER_WINDOW_CTR_ID, &g_QMsg, &msg, TO);
 					MotorCtr(0, MOTOR_POS_TURN);
 				}
@@ -99,7 +99,7 @@ void WindowHandle(const MSG_t *const pMsg)
 					{
 						TO = WINDOW_CTL_TIME;
 						msg.msgID = SYS_MSG_WINDOW_ID;
-						msg.Param = WINDOW_OPENED;
+						msg.Param = WINDOW_OPEN;
 						TimerUnitAdd(&g_TimerServer, TIMER_WINDOW_CTR_ID, &g_QMsg, &msg, TO);
 						MotorCtr(0, MOTOR_POS_TURN);
 					}
@@ -123,7 +123,7 @@ void WindowHandle(const MSG_t *const pMsg)
 			break;
 		case WINDOW_CLOSING:		//正在关闭
 			Log("WINDOW_CLOSING\r\n");
-			if(g_RunState[0].BitState.wait)
+			if((g_RunState[0].BitState.wait) || (g_RunState[0].BitState.open) || ((g_RunState[0].BitState.close)))
 			{
 				break;
 			}
@@ -138,7 +138,7 @@ void WindowHandle(const MSG_t *const pMsg)
 				{
 					TO = WINDOW_CTL_TIME - TimerUnitGetTO(&g_TimerServer, TIMER_WINDOW_CTR_ID);					
 					msg.msgID = SYS_MSG_WINDOW_ID;
-					msg.Param = WINDOW_CLOSED;
+					msg.Param = WINDOW_CLOSE;
 					TimerUnitAdd(&g_TimerServer, TIMER_WINDOW_CTR_ID, &g_QMsg, &msg, TO);
 					MotorCtr(0, MOTOR_NEG_TURN);
 				}
@@ -157,7 +157,7 @@ void WindowHandle(const MSG_t *const pMsg)
 					{
 						TO = WINDOW_CTL_TIME;
 						msg.msgID = SYS_MSG_WINDOW_ID;
-						msg.Param = WINDOW_CLOSED;
+						msg.Param = WINDOW_CLOSE;
 						TimerUnitAdd(&g_TimerServer, TIMER_WINDOW_CTR_ID, &g_QMsg, &msg, TO);
 						MotorCtr(0, MOTOR_NEG_TURN);
 					}
@@ -180,6 +180,30 @@ void WindowHandle(const MSG_t *const pMsg)
 				}
 			}
 			break;
+		case WINDOW_OPEN:				//
+			if(g_RunState[0].BitState.opening)
+			{
+				TO = WINDOW_WAIT_TIME;
+				msg.msgID = SYS_MSG_WINDOW_ID;
+				msg.Param = WINDOW_OPENED;
+				TimerUnitAdd(&g_TimerServer, TIMER_WINDOW_CTR_ID, &g_QMsg, &msg, TO);	
+				MotorCtr(0, MOTOR_STOP_TURN);
+				g_RunState[0].sta = 0;
+				g_RunState[0].BitState.open = 1;
+			}
+			break;
+		case WINDOW_CLOSE:				//
+			if(g_RunState[0].BitState.closing)
+			{
+				TO = WINDOW_WAIT_TIME;
+				msg.msgID = SYS_MSG_WINDOW_ID;
+				msg.Param = WINDOW_CLOSED;
+				TimerUnitAdd(&g_TimerServer, TIMER_WINDOW_CTR_ID, &g_QMsg, &msg, TO);	
+				MotorCtr(0, MOTOR_STOP_TURN);
+				g_RunState[0].sta = 0;
+				g_RunState[0].BitState.close = 1;
+			}
+			break;
 			
 		case WINDOW_OPENED:				//打开完成
 			Log("WINDOW_OPENED\r\n");
@@ -190,6 +214,8 @@ void WindowHandle(const MSG_t *const pMsg)
 	
 			LedSetLevel(LED_OPEN_ID, LOW, true);
 			LedSetLevel(LED_CLOSE_ID, LOW, true);
+			
+			QMsgPostSimple(&g_QMsg, SYS_MSG_WINDOW_ID, WINDOW_CLOSING);
 			break;
 			
 		case WINDOW_CLOSED:				//关闭完成
@@ -201,6 +227,8 @@ void WindowHandle(const MSG_t *const pMsg)
 			
 			LedSetLevel(LED_OPEN_ID, LOW, true);
 			LedSetLevel(LED_CLOSE_ID, LOW, true);
+			
+			QMsgPostSimple(&g_QMsg, SYS_MSG_WINDOW_ID, WINDOW_OPENING);
 			break;
 
 		case WINDOW_PAUSE:
@@ -249,20 +277,19 @@ void WindowHandle(const MSG_t *const pMsg)
 				msg.msgID = SYS_MSG_WINDOW_ID;
 				if(g_RunState[0].BitState.opening)
 				{
-					msg.Param = WINDOW_OPENED;
+					msg.Param = WINDOW_OPEN;
 					TimerUnitAdd(&g_TimerServer, TIMER_WINDOW_CTR_ID, &g_QMsg, &msg, TO);	
 					MotorCtr(0, MOTOR_POS_TURN);
 				}
 				else
 				{
-					msg.Param = WINDOW_CLOSED;
+					msg.Param = WINDOW_CLOSE;
 					TimerUnitAdd(&g_TimerServer, TIMER_WINDOW_CTR_ID, &g_QMsg, &msg, TO);	
 					MotorCtr(0, MOTOR_NEG_TURN);
 				}
 			}
 			g_RunState[0].BitState.wait = 0;
 			break;
-			
 		default:
 			break;
 	}

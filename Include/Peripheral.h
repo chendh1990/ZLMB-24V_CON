@@ -51,13 +51,15 @@
 
 
 #define WINDOW_CTL_TIME		SEC(20)
-#define WINDOW_WAIT_TIME	SEC(1)
+#define WINDOW_WAIT_TIME	SEC(10)
 
 /***********************数据结构定义************************/
 
 typedef enum{
 	WINDOW_OPENED = 0x01,
 	WINDOW_CLOSED,
+	WINDOW_OPEN,
+	WINDOW_CLOSE,
 	WINDOW_OPENING,
 	WINDOW_CLOSING,
 	WINDOW_PAUSE,
