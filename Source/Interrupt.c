@@ -38,3 +38,7 @@ static void Uart0_ISR(void) interrupt 4
        // clr_TI;                            
     }
 }
+static void BOD_ISR(void) interrupt 8
+{
+
+}

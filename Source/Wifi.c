@@ -524,6 +524,18 @@ static void SendTxPacketData(uint8 XDATA cmd)
 	s_WifiPacketCfg.txLength = 0;
 }
 
+static void WifiConfigTORun(void)
+{	
+	MSG_t msg;
+	msg.msgID = SYS_MSG_WIFI_ID;
+	msg.Param = WIFI_CONFIG_TO;
+	TimerUnitAdd(&g_TimerServer, TIMER_WIFI_CONFIG_ID, &g_QMsg, &msg, WIFI_CONFIG_TO_T);
+}
+
+static void WifiConfigTOStop(void)
+{	
+	TimerUnitDel(&g_TimerServer, TIMER_WIFI_CONFIG_ID);
+}
 void WifiHandle(const MSG_t *const pMsg)
 {
 	switch (pMsg->Param)
@@ -542,6 +554,7 @@ void WifiHandle(const MSG_t *const pMsg)
 				s_Wifi.setModeFlag = RESET_WIFI_ERROR;
 				SetTxPacketData(&dat, 1);
 				SendTxPacketData(WIFI_MODE_CMD);
+				WifiConfigTORun();
 			}
 			break;
 		case WIFI_AP:				//Wifi ap
@@ -560,6 +573,12 @@ void WifiHandle(const MSG_t *const pMsg)
 				AllDataUpdate();
 				SendTxPacketData(STATE_UPLOAD_CMD);
 			}
+			break;	
+		case WIFI_CONFIG_TO:
+			Log("WIFI_CONFIG_TO\r\n");
+			{
+				s_Wifi.CurrState = WIFI_CONNECTED;
+			}
 			break;
 		default:
 			break;
@@ -576,6 +595,7 @@ void WifiStatusShow(void)
 			case SMART_CONFIG_STATE:
 				Log("SMART_CONFIG_STATE\r\n");
 				LedSetFlash(LED_WIFI_ID, LED_FLASH_ALWAYS, 2, 2);
+				WifiConfigTORun();
 				break;
 			case AP_STATE:
 				Log("AP_STATE\r\n");
@@ -589,6 +609,7 @@ void WifiStatusShow(void)
 			case WIFI_CONNECTED:
 				Log("WIFI_CONNECTED\r\n");
 				LedSetLevel(LED_WIFI_ID, OFF, true);
+				WifiConfigTOStop();
 				break;
 
 			default:

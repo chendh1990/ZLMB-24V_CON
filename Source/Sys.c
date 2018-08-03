@@ -88,6 +88,7 @@ static void SystemInitStatus(void)
 	ShowSoftInfo();
 	
 	QMsgPostSimple(&g_QMsg, SYS_MSG_INIT_ID, 0);
+
 	g_SystemVar.SystemCurrentStatus = SYSTEM_RUN_STATUS;
 }
 

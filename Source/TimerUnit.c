@@ -13,8 +13,9 @@ sysServerTO_t SysTimerUnitServer(void)
 			if(g_TimerServer.TServer[i].enable)
 			{
 				if((g_TimerServer.TServer[i].TO%10) == 0)
-				{
-					Log("\t[%bd] TO:%d\r\n", i, g_TimerServer.TServer[i].TO/10);
+				{	
+					if(g_TimerServer.TServer[i].Id != 1)
+					Log("\t[%bd] TO:%d\r\n", g_TimerServer.TServer[i].Id, g_TimerServer.TServer[i].TO/10);
 				}
 				g_TimerServer.TServer[i].TO--;
 			}
@@ -174,33 +175,53 @@ void TimerUnitAdd(TimerServer_t *this, uint8 Id, MSG_Q_t *pqmsg, MSG_t *pmsg, ui
 		EXIT_CRITICAL();
 	}
 }
+uint8 TimerUnitGetIndex(TimerServer_t *this, uint8 Id)
+{
+	uint8 i;
+	if(!this)
+	{
+		return 0xff;
+	}
+	for(i = 0; i < g_TimerServer.Total; i++)
+	{
+		if(g_TimerServer.TServer[i].Id == Id)
+		{
+			return i;
+		}
+	}
+	return 0xff;
+}
 void TimerUnitEnable(TimerServer_t *this, uint8 Id, uint8 enable)
 {
+	uint8 index;
 	if(!this)
 	{
 		return ;
 	}
-	if(Id >= g_TimerServer.Total)
+	index = TimerUnitGetIndex(this, Id);
+	if(index >= g_TimerServer.Total)
 	{
 		return ;
 	}
 	
 	ENTER_CRITICAL();
-	g_TimerServer.TServer[Id].enable = enable;
+	g_TimerServer.TServer[index].enable = enable;
 	EXIT_CRITICAL();
 }
 uint8 TimerUnitIsExist(TimerServer_t *this, uint8 Id)
 {	
+	uint8 index;
 	if(!this)
 	{
 		return false;
 	}
-	if(Id >= g_TimerServer.Total)
+	index = TimerUnitGetIndex(this, Id);
+	if(index >= g_TimerServer.Total)
 	{
 		return false;
 	}
 	
-	if(g_TimerServer.TServer[Id].TO)
+	if(g_TimerServer.TServer[index].TO)
 	{
 		return true;
 	}
@@ -208,14 +229,16 @@ uint8 TimerUnitIsExist(TimerServer_t *this, uint8 Id)
 }
 uint16 TimerUnitGetTO(TimerServer_t *this, uint8 Id)
 {
+	uint8 index;
 	if(!this)
 	{
 		return 0;
 	}
-	if(Id >= g_TimerServer.Total)
+	index = TimerUnitGetIndex(this, Id);
+	if(index >= g_TimerServer.Total)
 	{
 		return 0;
 	}
-	return g_TimerServer.TServer[Id].TO;
+	return g_TimerServer.TServer[index].TO;
 }
 #endif

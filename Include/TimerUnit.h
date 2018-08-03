@@ -21,6 +21,7 @@
 /***********************数据结构定义************************/
 typedef enum{
 	TIMER_WINDOW_CTR_ID = 0,
+	TIMER_WIFI_CONFIG_ID,
 	TIMER_TABLE_MAX
 };
 typedef struct{
@@ -45,6 +46,7 @@ TIMER_UNIT_EXTERN sysServerTO_t SysTimerUnitServer(void);
 TIMER_UNIT_EXTERN void TimerUnitInit(TimerServer_t *this);
 TIMER_UNIT_EXTERN void TimerUnitDel(TimerServer_t *this, uint8 Id);
 TIMER_UNIT_EXTERN void TimerUnitAdd(TimerServer_t *this, uint8 Id, MSG_Q_t *pqmsg, MSG_t *pmsg, uint16 TO);
+TIMER_UNIT_EXTERN uint8 TimerUnitGetIndex(TimerServer_t *this, uint8 Id);
 TIMER_UNIT_EXTERN void TimerUnitEnable(TimerServer_t *this, uint8 Id, uint8 enable);
 TIMER_UNIT_EXTERN uint8 TimerUnitIsRun(TimerServer_t *this, uint8 Id);
 TIMER_UNIT_EXTERN uint16 TimerUnitGetTO(TimerServer_t *this, uint8 Id);

@@ -93,6 +93,10 @@
 
 
 
+
+#define 		WIFI_CONFIG_TO_T			MIN(2)
+
+
 /***********************数据结构定义************************/
 typedef enum
 {
@@ -148,7 +152,8 @@ typedef enum{
 	WIFI_RESET = 0,
 	WIFI_SMART_CONFIG,
 	WIFI_AP,
-	WIFI_UPLOAD
+	WIFI_UPLOAD,
+	WIFI_CONFIG_TO
 }Wifi_Cmd_t;
 
 /********************全局变量声明与定义***********************/
