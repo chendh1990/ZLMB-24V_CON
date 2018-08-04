@@ -56,8 +56,9 @@ void MotorCtr(uint8 ch, uint8 cmd)
 
 void WindowHandle(const MSG_t *const pMsg)
 {
-	uint16 XDATA TO;
-	static uint16 XDATA TObak;
+	uint16 TO;
+	static uint16 TObak;
+	static uint8 flag = 0;
 	MSG_t XDATA msg;
 	if(!pMsg)
 	{
@@ -68,7 +69,6 @@ void WindowHandle(const MSG_t *const pMsg)
 	{
 		case WINDOW_OPENING:			//正在打开
 			Log("WINDOW_OPENING\r\n");
-			Log("g_RunState[0].BitState=0x%bx\r\n", g_RunState[0].BitState);
 			if(g_RunState[0].BitState.wait)
 			{
 				break;
@@ -82,7 +82,18 @@ void WindowHandle(const MSG_t *const pMsg)
 				}
 				if(g_RunState[0].BitState.closing) //关闭运行状态-> 暂停状态 -> 打开运行状态
 				{
-					TO = WINDOW_CTL_TIME - TimerUnitGetTO(&g_TimerServer, TIMER_WINDOW_CTR_ID);					
+					if(flag == 0)
+					{
+						TO = (WINDOW_OFF_TOTAL_TIME1 - TimerUnitGetTO(&g_TimerServer, TIMER_WINDOW_CTR_ID));
+					}
+					else
+					{
+						TO = (WINDOW_OFF_TOTAL_TIME0 - TimerUnitGetTO(&g_TimerServer, TIMER_WINDOW_CTR_ID));
+					}
+					if(TO > SEC(25))
+					{
+						TO = WINDOW_OFF_TOTAL_TIME0;
+					}
 					msg.msgID = SYS_MSG_WINDOW_ID;
 					msg.Param = WINDOW_OPEN;
 					TimerUnitAdd(&g_TimerServer, TIMER_WINDOW_CTR_ID, &g_QMsg, &msg, TO);
@@ -101,7 +112,7 @@ void WindowHandle(const MSG_t *const pMsg)
 				{
 					if(g_RunState[0].BitState.closed)	//关闭状态 -> 打开运行状态
 					{
-						TO = WINDOW_CTL_TIME;
+						TO = WINDOW_ON_TOTAL_TIME;
 						msg.msgID = SYS_MSG_WINDOW_ID;
 						msg.Param = WINDOW_OPEN;
 						TimerUnitAdd(&g_TimerServer, TIMER_WINDOW_CTR_ID, &g_QMsg, &msg, TO);
@@ -110,7 +121,18 @@ void WindowHandle(const MSG_t *const pMsg)
 					}
 					else		//关闭运行状态 -> 打开运行状态
 					{
-						TObak = WINDOW_CTL_TIME - TimerUnitGetTO(&g_TimerServer, TIMER_WINDOW_CTR_ID);
+						if(flag == 0)
+						{
+							TObak = (WINDOW_OFF_TOTAL_TIME1 - TimerUnitGetTO(&g_TimerServer, TIMER_WINDOW_CTR_ID));
+						}
+						else
+						{
+							TObak = (WINDOW_OFF_TOTAL_TIME0 - TimerUnitGetTO(&g_TimerServer, TIMER_WINDOW_CTR_ID));
+						}
+						if(TObak > SEC(25))
+						{
+							TObak = WINDOW_OFF_TOTAL_TIME0;
+						}
 						TO = WINDOW_WAIT_TIME;
 						msg.msgID = SYS_MSG_WINDOW_ID;
 						msg.Param = WINDOW_WAIT;
@@ -141,11 +163,12 @@ void WindowHandle(const MSG_t *const pMsg)
 				}
 				if(g_RunState[0].BitState.opening) //打开运行状态-> 暂停状态 -> 关闭运行状态
 				{
-					TO = WINDOW_CTL_TIME - TimerUnitGetTO(&g_TimerServer, TIMER_WINDOW_CTR_ID);					
+					TO = WINDOW_OFF_TOTAL_TIME0 - TimerUnitGetTO(&g_TimerServer, TIMER_WINDOW_CTR_ID);					
 					msg.msgID = SYS_MSG_WINDOW_ID;
 					msg.Param = WINDOW_CLOSE;
 					TimerUnitAdd(&g_TimerServer, TIMER_WINDOW_CTR_ID, &g_QMsg, &msg, TO);
 					MotorCtr(0, MOTOR_NEG_TURN);
+					flag = 1;
 				}
 				g_RunState[0].sta = 0;
 				g_RunState[0].BitState.closing = 1;
@@ -160,16 +183,17 @@ void WindowHandle(const MSG_t *const pMsg)
 				{
 					if(g_RunState[0].BitState.opened)
 					{
-						TO = WINDOW_CTL_TIME;
+						TO = WINDOW_OFF_TOTAL_TIME1;
 						msg.msgID = SYS_MSG_WINDOW_ID;
 						msg.Param = WINDOW_CLOSE;
 						TimerUnitAdd(&g_TimerServer, TIMER_WINDOW_CTR_ID, &g_QMsg, &msg, TO);
 						MotorCtr(0, MOTOR_NEG_TURN);
 						g_RunState[0].sta = 0;
+						flag = 0;
 					}
 					else			//打开运行状态 -> 关闭运行状态
 					{
-						TObak = WINDOW_CTL_TIME - TimerUnitGetTO(&g_TimerServer, TIMER_WINDOW_CTR_ID);
+						TObak = WINDOW_OFF_TOTAL_TIME0 - TimerUnitGetTO(&g_TimerServer, TIMER_WINDOW_CTR_ID);
 						TO = WINDOW_WAIT_TIME;
 						msg.msgID = SYS_MSG_WINDOW_ID;
 						msg.Param = WINDOW_WAIT;
@@ -177,6 +201,7 @@ void WindowHandle(const MSG_t *const pMsg)
 						MotorCtr(0, MOTOR_STOP_TURN);
 						g_RunState[0].sta = 0;
 						g_RunState[0].BitState.wait = 1;
+						flag = 1;
 					}
 					
 					g_RunState[0].BitState.closing = 1;

@@ -50,8 +50,10 @@
 
 
 
-#define WINDOW_CTL_TIME		SEC(20)
-#define WINDOW_WAIT_TIME	SEC(1)
+#define WINDOW_ON_TOTAL_TIME	SEC(25)
+#define WINDOW_OFF_TOTAL_TIME0	SEC(25)
+#define WINDOW_OFF_TOTAL_TIME1	SEC(90)
+#define WINDOW_WAIT_TIME		SEC(1)
 
 /***********************数据结构定义************************/
 

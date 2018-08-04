@@ -2,6 +2,7 @@
 /List
 /Output
 /SiPro
+/Doc
 *.plg
 *.ini
 *.cdh
