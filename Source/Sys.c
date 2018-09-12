@@ -21,11 +21,13 @@ System_Server_t g_SystemServer[SYS_MAX_SERVER_ID] =
 	{
 		KEY_SCAN_SERVER_TICK,
 		KeyScanServer
-	},
+	}
+,
 	{
 		LED_SHOW_SERVER_TICK,
 		LedShowServer
-	},
+	}
+,
 	{
 		TIMER_UNIT_SERVER_TICK,
 		SysTimerUnitServer,

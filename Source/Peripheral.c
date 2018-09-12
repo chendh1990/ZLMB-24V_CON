@@ -268,6 +268,7 @@ void WindowHandle(const MSG_t *const pMsg)
 			if(g_RunState[0].BitState.pause)
 			{
 				Log("UnPause\r\n");
+				break;// 去掉这个功能 20180806
 				if((g_RunState[0].BitState.opening) || (g_RunState[0].BitState.closing))
 				{
 					if(g_RunState[0].BitState.opening) //打开运行状态-> 暂停状态 ->           取消暂停 -> 打开运行状态

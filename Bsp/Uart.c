@@ -109,14 +109,16 @@ char putchar(char c)
 	TI = 0;
 	SBUF = c;      /* output character */
 	return (c);
-}
+}
+
 char putchar_wifi(char c)
 {
 	while(!TI_1);  /* wait until transmitter ready */
 	TI_1 = 0;
 	SBUF_1 = c;      /* output character */
 	return (c);
-}
+}
+
 
 #else	//printf for uart1
 char putchar_wifi(char c)
@@ -125,14 +127,16 @@ char putchar_wifi(char c)
 	TI = 0;
 	SBUF = c;      /* output character */
 	return (c);
-}
+}
+
 char putchar(char c)
 {
 	while(!TI_1);  /* wait until transmitter ready */
 	TI_1 = 0;
 	SBUF_1 = c;      /* output character */
 	return (c);
-}
+}
+
 #endif
 
 static void UartSendByte(UartPort_t Port, char c)
