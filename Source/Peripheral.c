@@ -58,7 +58,7 @@ void WindowHandle(const MSG_t *const pMsg)
 {
 	uint16 TO;
 	static uint16 TObak;
-	static uint8 flag = 0;
+	static uint16 OpenTOBak;
 	MSG_t XDATA msg;
 	if(!pMsg)
 	{
@@ -75,36 +75,40 @@ void WindowHandle(const MSG_t *const pMsg)
 			}
 			if(g_RunState[0].BitState.pause)		//暂停状态 -> 打开运行状态
 			{
-				if(g_RunState[0].BitState.opening) //打开运行状态-> 暂停状态 -> 打开运行状态
+				if((g_RunState[0].BitState.opening) || (g_RunState[0].BitState.closing))
 				{
-					MotorCtr(0, MOTOR_POS_TURN);	
-					TimerUnitEnable(&g_TimerServer, TIMER_WINDOW_CTR_ID, true);
+					if(g_RunState[0].BitState.opening) //打开运行状态-> 暂停状态 -> 打开运行状态
+					{
+						MotorCtr(0, MOTOR_POS_TURN);	
+						TimerUnitEnable(&g_TimerServer, TIMER_WINDOW_CTR_ID, true);
+					}
+					if(g_RunState[0].BitState.closing) //关闭运行状态-> 暂停状态 -> 打开运行状态
+					{
+						TO = (WINDOW_OFF_TOTAL_TIME - TimerUnitGetTO(&g_TimerServer, TIMER_WINDOW_CTR_ID));
+						if(TO > WINDOW_ON_TOTAL_TIME)
+						{
+							TO = WINDOW_ON_TOTAL_TIME;
+						}
+						else if(TO >= OpenTOBak)
+						{
+							TO = WINDOW_ON_TOTAL_TIME;
+						}
+						else
+						{
+							TO = WINDOW_ON_TOTAL_TIME - (OpenTOBak - TO);
+						}
+						msg.msgID = SYS_MSG_WINDOW_ID;
+						msg.Param = WINDOW_OPENED;
+						TimerUnitAdd(&g_TimerServer, TIMER_WINDOW_CTR_ID, &g_QMsg, &msg, TO);
+						MotorCtr(0, MOTOR_POS_TURN);
+					}
+					g_RunState[0].sta = 0;
+					g_RunState[0].BitState.opening = 1;
+							
+					LedSetLevel(LED_CLOSE_ID, LOW, true);
+					LedSetLevel(LED_OPEN_ID, HIGH, true);
+					LedSetLevel(LED_PAUSE_ID, LOW, true);
 				}
-				if(g_RunState[0].BitState.closing) //关闭运行状态-> 暂停状态 -> 打开运行状态
-				{
-					if(flag == 0)
-					{
-						TO = (WINDOW_OFF_TOTAL_TIME1 - TimerUnitGetTO(&g_TimerServer, TIMER_WINDOW_CTR_ID));
-					}
-					else
-					{
-						TO = (WINDOW_OFF_TOTAL_TIME0 - TimerUnitGetTO(&g_TimerServer, TIMER_WINDOW_CTR_ID));
-					}
-					if(TO > SEC(25))
-					{
-						TO = WINDOW_OFF_TOTAL_TIME0;
-					}
-					msg.msgID = SYS_MSG_WINDOW_ID;
-					msg.Param = WINDOW_OPEN;
-					TimerUnitAdd(&g_TimerServer, TIMER_WINDOW_CTR_ID, &g_QMsg, &msg, TO);
-					MotorCtr(0, MOTOR_POS_TURN);
-				}
-				g_RunState[0].sta = 0;
-				g_RunState[0].BitState.opening = 1;
-						
-				LedSetLevel(LED_CLOSE_ID, LOW, true);
-				LedSetLevel(LED_OPEN_ID, HIGH, true);
-				LedSetLevel(LED_PAUSE_ID, LOW, true);
 			}
 			else
 			{
@@ -114,34 +118,28 @@ void WindowHandle(const MSG_t *const pMsg)
 					{
 						TO = WINDOW_ON_TOTAL_TIME;
 						msg.msgID = SYS_MSG_WINDOW_ID;
-						msg.Param = WINDOW_OPEN;
+						msg.Param = WINDOW_OPENED;
 						TimerUnitAdd(&g_TimerServer, TIMER_WINDOW_CTR_ID, &g_QMsg, &msg, TO);
 						MotorCtr(0, MOTOR_POS_TURN);
-						g_RunState[0].sta = 0;
 					}
 					else		//关闭运行状态 -> 打开运行状态
 					{
-						if(flag == 0)
+						TO = (WINDOW_OFF_TOTAL_TIME - TimerUnitGetTO(&g_TimerServer, TIMER_WINDOW_CTR_ID));
+						if(TO >= WINDOW_ON_TOTAL_TIME)
 						{
-							TObak = (WINDOW_OFF_TOTAL_TIME1 - TimerUnitGetTO(&g_TimerServer, TIMER_WINDOW_CTR_ID));
+							TO = WINDOW_ON_TOTAL_TIME;
+							msg.msgID = SYS_MSG_WINDOW_ID;
+							msg.Param = WINDOW_OPENED;
+							TimerUnitAdd(&g_TimerServer, TIMER_WINDOW_CTR_ID, &g_QMsg, &msg, TO);
+							MotorCtr(0, MOTOR_POS_TURN);
 						}
 						else
 						{
-							TObak = (WINDOW_OFF_TOTAL_TIME0 - TimerUnitGetTO(&g_TimerServer, TIMER_WINDOW_CTR_ID));
+							break;
 						}
-						if(TObak > SEC(25))
-						{
-							TObak = WINDOW_OFF_TOTAL_TIME0;
-						}
-						TO = WINDOW_WAIT_TIME;
-						msg.msgID = SYS_MSG_WINDOW_ID;
-						msg.Param = WINDOW_WAIT;
-						TimerUnitAdd(&g_TimerServer, TIMER_WINDOW_CTR_ID, &g_QMsg, &msg, TO);
-						MotorCtr(0, MOTOR_STOP_TURN);
-						g_RunState[0].sta = 0;
-						g_RunState[0].BitState.wait = 1;
 					}
 				 
+					g_RunState[0].sta = 0;
 					g_RunState[0].BitState.opening = 1;
 					LedSetLevel(LED_CLOSE_ID, LOW, true);
 					LedSetLevel(LED_OPEN_ID, HIGH, true);
@@ -163,12 +161,11 @@ void WindowHandle(const MSG_t *const pMsg)
 				}
 				if(g_RunState[0].BitState.opening) //打开运行状态-> 暂停状态 -> 关闭运行状态
 				{
-					TO = WINDOW_OFF_TOTAL_TIME0 - TimerUnitGetTO(&g_TimerServer, TIMER_WINDOW_CTR_ID);					
+					TO = WINDOW_OFF_TOTAL_TIME;					
 					msg.msgID = SYS_MSG_WINDOW_ID;
-					msg.Param = WINDOW_CLOSE;
+					msg.Param = WINDOW_CLOSED;
 					TimerUnitAdd(&g_TimerServer, TIMER_WINDOW_CTR_ID, &g_QMsg, &msg, TO);
 					MotorCtr(0, MOTOR_NEG_TURN);
-					flag = 1;
 				}
 				g_RunState[0].sta = 0;
 				g_RunState[0].BitState.closing = 1;
@@ -179,21 +176,21 @@ void WindowHandle(const MSG_t *const pMsg)
 			}
 			else
 			{
-				if((g_RunState[0].BitState.opened) || (g_RunState[0].BitState.opening))	//从打开或打开运行状态到关闭运行状态
+				//if((g_RunState[0].BitState.opened) || (g_RunState[0].BitState.opening))	//从打开或打开运行状态到关闭运行状态
+				if(g_RunState[0].BitState.opened)	//从打开状态到关闭运行状态
 				{
-					if(g_RunState[0].BitState.opened)
+					//if(g_RunState[0].BitState.opened)
 					{
-						TO = WINDOW_OFF_TOTAL_TIME1;
+						TO = WINDOW_OFF_TOTAL_TIME;
 						msg.msgID = SYS_MSG_WINDOW_ID;
-						msg.Param = WINDOW_CLOSE;
+						msg.Param = WINDOW_CLOSED;
 						TimerUnitAdd(&g_TimerServer, TIMER_WINDOW_CTR_ID, &g_QMsg, &msg, TO);
 						MotorCtr(0, MOTOR_NEG_TURN);
 						g_RunState[0].sta = 0;
-						flag = 0;
-					}
+					}/*
 					else			//打开运行状态 -> 关闭运行状态
 					{
-						TObak = WINDOW_OFF_TOTAL_TIME0 - TimerUnitGetTO(&g_TimerServer, TIMER_WINDOW_CTR_ID);
+						TObak = WINDOW_OFF_TOTAL_TIME - TimerUnitGetTO(&g_TimerServer, TIMER_WINDOW_CTR_ID);
 						TO = WINDOW_WAIT_TIME;
 						msg.msgID = SYS_MSG_WINDOW_ID;
 						msg.Param = WINDOW_WAIT;
@@ -202,7 +199,7 @@ void WindowHandle(const MSG_t *const pMsg)
 						g_RunState[0].sta = 0;
 						g_RunState[0].BitState.wait = 1;
 						flag = 1;
-					}
+					}*/
 					
 					g_RunState[0].BitState.closing = 1;
 					LedSetLevel(LED_OPEN_ID, LOW, true);
@@ -296,10 +293,15 @@ void WindowHandle(const MSG_t *const pMsg)
 					g_RunState[0].BitState.pause = 1;
 					MotorCtr(0, MOTOR_STOP_TURN);	
 					TimerUnitEnable(&g_TimerServer, TIMER_WINDOW_CTR_ID, false);
-					
+
 					LedSetLevel(LED_PAUSE_ID, HIGH, true);
 					LedSetLevel(LED_OPEN_ID, LOW, true);
 					LedSetLevel(LED_CLOSE_ID, LOW, true);
+					if(g_RunState[0].BitState.opening)
+					{
+						
+						OpenTOBak = WINDOW_ON_TOTAL_TIME - TimerUnitGetTO(&g_TimerServer, TIMER_WINDOW_CTR_ID);
+					}
 				}
 			}
 			break;

@@ -1,7 +1,5 @@
 #include "Sys.h"
 
-
-
 void main(void)
 {
 	SystemVarInit();

@@ -88,7 +88,7 @@ static void SystemInitStatus(void)
 	TimerUnitInit(&g_TimerServer);
 	QMsgInit(&g_QMsg, &g_MsgArray, MSG_NUM_MAX);
 	ShowSoftInfo();
-	
+	WDTFeed();
 	QMsgPostSimple(&g_QMsg, SYS_MSG_INIT_ID, 0);
 
 	g_SystemVar.SystemCurrentStatus = SYSTEM_RUN_STATUS;
@@ -116,6 +116,7 @@ static void SystemRunStatus(void)
 		}
 		WifiPacketParse();
 		WifiStatusShow();
+		WDTFeed();
 	}
 }
 static void SystemHandle(MSG_t XDATA *pMsg)

@@ -15,7 +15,9 @@ sysServerTO_t SysTimerUnitServer(void)
 				if((g_TimerServer.TServer[i].TO%10) == 0)
 				{	
 					if(g_TimerServer.TServer[i].Id != 1)
-					Log("\t[%bd] TO:%d\r\n", g_TimerServer.TServer[i].Id, g_TimerServer.TServer[i].TO/10);
+					{
+						Log("\t[%bd] TO:%d\r\n", g_TimerServer.TServer[i].Id, g_TimerServer.TServer[i].TO/10);
+					}
 				}
 				g_TimerServer.TServer[i].TO--;
 			}

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "Uart.h"
 
+//#define DEBUG		false
 #define DEBUG		true
 
 

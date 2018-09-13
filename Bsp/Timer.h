@@ -8,7 +8,7 @@
 #endif
 
 TIMER_EXTERN void TimerInit(void);
-TIMER_EXTERN void Timer1_Delay10ms(unsigned int u32CNT);
+TIMER_EXTERN void WDTFeed(void);
 
 
 #endif
