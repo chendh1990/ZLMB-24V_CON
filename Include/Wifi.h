@@ -27,6 +27,7 @@
 
 #define PRODUCT_INFO		PRODUCT_KEY##""##MCU_VER
 
+#define SUPPORT_MCU_FIRM_UPDATE
 
 //开关(可下发可上报)
 //备注:

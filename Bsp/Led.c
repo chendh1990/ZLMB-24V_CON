@@ -1,6 +1,7 @@
 #define __LED_C__
 #include "Led.h"
 #include "Log.h"
+#include "Common.h"
 
 static Led_Status_t XDATA s_LedStatus[LED_MAX_ID];
 
@@ -11,10 +12,19 @@ void LedInit(void)
 	P11_PushPull_Mode;
 	P12_PushPull_Mode;
 	P15_PushPull_Mode;
-
-	LED_OPEN_OFF;
-	LED_CLOSE_OFF;
-	LED_PAUSE_OFF;
+//	for(i = 0; i < 3; i++)
+	{	
+		LED_OPEN_ON;
+		LED_CLOSE_ON;
+		LED_PAUSE_ON;
+		LED_WIFI_ON;
+		delay(500);
+		LED_OPEN_OFF;
+		LED_CLOSE_OFF;
+		LED_PAUSE_OFF;	
+		LED_WIFI_OFF;
+		//delay(300);
+	}
 
 	for(i = 0; i < LED_MAX_ID; i++)
 	{

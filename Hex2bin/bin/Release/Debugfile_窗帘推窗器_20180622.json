@@ -1,0 +1,1 @@
+{"Pro_Key":"8ahVHV0wZHvUFVPF","Dp_Data":[{"attr":0,"code":"switch_1","desc":"","id":1,"mode":"rw","name":"开关","property":{"type":"bool"},"type":"obj"},{"attr":0,"code":"switch_2","desc":"","id":2,"mode":"rw","name":"暂停","property":{"type":"bool"},"type":"obj"}]}

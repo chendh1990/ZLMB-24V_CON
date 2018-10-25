@@ -6,6 +6,6 @@ void main(void)
 
 	while(true)
 	{
-		SystemStatusMachine(g_SystemVar.SystemLastStatus);
+		SystemStatusMachine(g_SystemVar.SystemNextStatus);
 	}
 }

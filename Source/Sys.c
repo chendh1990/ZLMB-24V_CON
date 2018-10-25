@@ -65,9 +65,7 @@ void SystemStatusMachine(unsigned char SystemStatus)
 	{
 		case SYSTEM_INIT_STATUS:
 			SystemInitStatus();
-			break;
-		case SYSTEM_RUN_STATUS:
-			SystemRunStatus();
+		
 			break;
 		
 		default:
@@ -91,7 +89,7 @@ static void SystemInitStatus(void)
 	WDTFeed();
 	QMsgPostSimple(&g_QMsg, SYS_MSG_INIT_ID, 0);
 
-	g_SystemVar.SystemCurrentStatus = SYSTEM_RUN_STATUS;
+	g_SystemVar.SystemNextStatus = SYSTEM_RUN_STATUS;
 }
 
 static void SystemRunStatus(void)
@@ -169,11 +167,11 @@ static sysServerTO_t testServer(void)
 
 	if(flash&1)
 	{
-		LedSetLevel(LED_WORK_ID, HIGH, true);
+		LedSetLevel(LED_WIFI_ID, HIGH, true);
 	}
 	else
 	{
-		LedSetLevel(LED_WORK_ID, LOW, true);
+		LedSetLevel(LED_WIFI_ID, LOW, true);
 	}
 	flash++;
 */

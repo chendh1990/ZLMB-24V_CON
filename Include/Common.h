@@ -12,9 +12,10 @@
 #endif
 
 /***********************∫Í∂®“Â****************************/
+COMMON_EXTERN bool BIT_TMP;
 
-#define ENTER_CRITICAL()	clr_EA
-#define EXIT_CRITICAL()		set_EA
+#define ENTER_CRITICAL()	{BIT_TMP = EA; EA = 0;}while(0)
+#define EXIT_CRITICAL()		{EA = BIT_TMP;}while(0)
 
 #define FW_VER				0001
 
@@ -28,5 +29,6 @@ COMMON_EXTERN uint8 hex_to_bcd(uint8 Value_H, uint8 Value_L);
 COMMON_EXTERN uint16 my_strlen(uint8 const *str);
 //COMMON_EXTERN void *my_memset(void *src, uint8 ch, uint16 count);
 COMMON_EXTERN void *my_memcpy(void *dest, const void *src, uint16 count);
+COMMON_EXTERN void delay(uint16 ms);
 
 #endif

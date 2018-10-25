@@ -35,7 +35,8 @@ static void Uart0_ISR(void) interrupt 4
     }
     if(TI) 				/* if emission occur */
     {
-       // clr_TI;                            
+         clr_TI;
+		 txOver = true;	                          
     }
 }
 static void BOD_ISR(void) interrupt 8

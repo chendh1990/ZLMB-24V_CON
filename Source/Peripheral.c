@@ -14,20 +14,15 @@
 static void JKInit(void)
 {
 	P00_PushPull_Mode;
-	P10_PushPull_Mode;
+	P10_PushPull_Mode;	
+	JK1_CTR_OFF;
+	JK2_CTR_ON;
 }
 void PeriphralInit(void)
 {
-	KeyInit();
-	LedInit(); 
+	KeyInit(); 
 	JKInit();
-	LED_PAUSE_OFF;
-	LED_WIFI_OFF;
-	JK1_CTR_OFF;
-	JK2_CTR_ON;
-
-	//IAP_ByteWrite(15*1024, 0x56);
-	//Log("iap_read:0x%x\r\n", IAP_ByteRead(15*1024));
+	LedInit();
 }
 
 void MotorCtr(uint8 ch, uint8 cmd)
@@ -58,7 +53,7 @@ void WindowHandle(const MSG_t *const pMsg)
 {
 	uint16 TO;
 	static uint16 TObak;
-	static uint16 OpenTOBak;
+	static uint16 OpenTOBak = WINDOW_ON_TOTAL_TIME;
 	MSG_t XDATA msg;
 	if(!pMsg)
 	{
@@ -236,6 +231,7 @@ void WindowHandle(const MSG_t *const pMsg)
 			Log("WINDOW_OPENED\r\n");
 			g_RunState[0].sta = 0;
 			g_RunState[0].BitState.opened = 1;
+			OpenTOBak = WINDOW_ON_TOTAL_TIME;
 			MotorCtr(0, MOTOR_STOP_TURN);
 			QMsgPostSimple(&g_QMsg, SYS_MSG_WIFI_ID, WIFI_UPLOAD);
 	

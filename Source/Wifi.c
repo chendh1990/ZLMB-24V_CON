@@ -4,6 +4,7 @@
 #include "Common.h"
 #include "Uart.h"
 #include "Sys.h"
+#include "Iap.h"
 #include "Peripheral.h"
 #include "Led.h"
 #include "Log.h"
@@ -284,17 +285,6 @@ void WifiPacketParse(void)
 *****************************************************************************/
 void WifiPacketHandle(void)
 {
-#ifdef SUPPORT_MCU_FIRM_UPDATE
-  unsigned char *firmware_addr;
-  static unsigned long firm_length;                                             //MCU升级文件长度
-  static unsigned char firm_update_flag;                                        //MCU升级标志
-  unsigned long dp_len;
-#else
-//  unsigned short dp_len;
-#endif
-  
-  //unsigned char ret;
-  //unsigned short i,total_len;
 #ifdef WIFI_TEST_ENABLE
   //unsigned char result;
   //unsigned char rssi;
@@ -339,67 +329,28 @@ void WifiPacketHandle(void)
     AllDataUpdate();
 	SendTxPacketData(STATE_UPLOAD_CMD);
     break;
- #if 0  
+
 #ifdef SUPPORT_MCU_FIRM_UPDATE
   case UPDATE_START_CMD:                                //升级开始
-    firm_length = wifi_uart_rx_buf[offset + DATA_START];
-    firm_length <<= 8;
-    firm_length |= wifi_uart_rx_buf[offset + DATA_START + 1];
-    firm_length <<= 8;
-    firm_length |= wifi_uart_rx_buf[offset + DATA_START + 2];
-    firm_length <<= 8;
-    firm_length |= wifi_uart_rx_buf[offset + DATA_START + 3];
-    //
-    wifi_uart_write_frame(UPDATE_START_CMD,0);
-    firm_update_flag = UPDATE_START_CMD;
+	{
+		uint8 i;
+		for(i = 0; i < 10; i++)
+		{
+			LedSetLevel(LED_WIFI_ID, LOW, true);
+			delay(50);
+			LedSetLevel(LED_WIFI_ID, HIGH, true);
+			delay(50);
+		}
+		Log("FirmwareUpdate \r\n");
+		SoftResetLdRomStart();
+
+	}
      break;
     
   case UPDATE_TRANS_CMD:                                //升级传输
-    if(firm_update_flag == UPDATE_START_CMD)
-    {
-      //停止一切数据上报
-      stop_update_flag = ENABLE;                                                 
-      
-      total_len = wifi_uart_rx_buf[offset + LENGTH_HIGH] * 0x100;
-      total_len += wifi_uart_rx_buf[offset + LENGTH_LOW];
-      
-      dp_len = wifi_uart_rx_buf[offset + DATA_START];
-      dp_len <<= 8;
-      dp_len |= wifi_uart_rx_buf[offset + DATA_START + 1];
-      dp_len <<= 8;
-      dp_len |= wifi_uart_rx_buf[offset + DATA_START + 2];
-      dp_len <<= 8;
-      dp_len |= wifi_uart_rx_buf[offset + DATA_START + 3];
-      
-      firmware_addr = (unsigned char *)wifi_uart_rx_buf;
-      firmware_addr += (offset + DATA_START + 4);
-      if((total_len == 4) && (dp_len == firm_length))
-      {
-        //最后一包
-        ret = mcu_firm_update_handle(firmware_addr,dp_len,0);
-        
-        firm_update_flag = 0;
-      }
-      else if((total_len - 4) <= FIRM_UPDATA_SIZE)
-      {
-        ret = mcu_firm_update_handle(firmware_addr,dp_len,total_len - 4);
-      }
-      else
-      {
-        firm_update_flag = 0;
-        ret = ERROR;
-      }
-      
-      if(ret == SUCCESS)
-      {
-        wifi_uart_write_frame(UPDATE_TRANS_CMD,0);
-      }
-      //恢复一切数据上报
-      stop_update_flag = DISABLE;    
-    }
     break;
 #endif      
-    
+#if 0     
 #ifdef SUPPORT_MCU_RTC_CHECK
   case GET_LOCAL_TIME_CMD:                             //获取本地时间
       mcu_write_rtctime(wifi_uart_rx_buf + offset + DATA_START);
@@ -465,7 +416,8 @@ static uint8 OneDataPointHand(uint8 const XDATA* pDPVal)
 	dpType = pDPVal[1];
 	dpLength = BUILD_UINT16(pDPVal[3], pDPVal[2]);
 	pVal = pDPVal + 4;
-	dpIndex = GetDowmloadDataPointIdIndex(dpID);
+	dpIndex = GetDowmloadDataPointIdIndex(dpID);
+
 	if(s_DownloadCmd[dpIndex].dp_type == dpType)
 	{
 		return DownloadDataPointHandle(pVal, dpID, dpLength);
@@ -540,6 +492,7 @@ void WifiHandle(const MSG_t *const pMsg)
 {
 	switch (pMsg->Param)
 	{
+	#if 1
 		case WIFI_RESET:			//Wifi reset
 			Log("WIFI_RESET\r\n");
 			s_Wifi.resetFlag = RESET_WIFI_ERROR;
@@ -567,6 +520,7 @@ void WifiHandle(const MSG_t *const pMsg)
 				SendTxPacketData(WIFI_MODE_CMD);
 			}
 			break;
+	#endif
 		case WIFI_UPLOAD:
 			Log("WIFI_UPLOAD\r\n");
 			{

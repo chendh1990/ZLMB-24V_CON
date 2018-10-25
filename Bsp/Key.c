@@ -1,9 +1,16 @@
 #define __KEY_C__
+
+#include "SFR_Macro.h"
 #include "Key.h"
 #include "Sys.h"
 #include "Peripheral.h"
 #include "Wifi.h"
+#include "Led.h"
+#include "Iap.h"
 #include "Log.h"
+
+
+static void DealFirmwareUpdate(uint8 keyValue);
 
 void KeyInit(void)
 {
@@ -97,36 +104,43 @@ void KeyHandle(const MSG_t *const pMsg)
 	{
 		return ;
 	}
+	//return ;
 	//Log("msgParm:%bx\r\n", (uint8)(pMsg->Param));
 	switch (pMsg->Param)
 	{
 		case PS_K1:				//打开
 			Log("PS_K1\r\n");
-			QMsgPostSimple(&g_QMsg, SYS_MSG_WINDOW_ID, WINDOW_OPENING);
+			//DealFirmwareUpdate(PS_K1);
+			QMsgPostSimple(&g_QMsg, SYS_MSG_WINDOW_ID, WINDOW_CLOSING);
 			break;
 			
 		case PS_K2:				//暂停
 			Log("PS_K2\r\n");
+			//DealFirmwareUpdate(PS_K2);
 			QMsgPostSimple(&g_QMsg, SYS_MSG_WINDOW_ID, WINDOW_PAUSE);
 			break;
 			
 		case PS_K3:				//关闭
 			Log("PS_K3\r\n");	
-			QMsgPostSimple(&g_QMsg, SYS_MSG_WINDOW_ID, WINDOW_CLOSING);
+			//DealFirmwareUpdate(PS_K3);
+			QMsgPostSimple(&g_QMsg, SYS_MSG_WINDOW_ID, WINDOW_OPENING);
 			break;
 			
 		case PL_K1:				//smartconfig
 			Log("PL_K1\r\n");
+			//DealFirmwareUpdate(PL_K1);
 			QMsgPostSimple(&g_QMsg, SYS_MSG_WIFI_ID, WIFI_SMART_CONFIG);
 			break;
 			
 		case PL_K2:				//smartconfig
 			Log("PL_K2\r\n");
+			//DealFirmwareUpdate(PL_K2);
 			QMsgPostSimple(&g_QMsg, SYS_MSG_WIFI_ID, WIFI_SMART_CONFIG);
 			break;
 			
 		case PL_K3:				//smartconfig
 			Log("PL_K3\r\n");
+			//DealFirmwareUpdate(PL_K3);
 			QMsgPostSimple(&g_QMsg, SYS_MSG_WIFI_ID, WIFI_SMART_CONFIG);
 			break;
 			
@@ -134,4 +148,42 @@ void KeyHandle(const MSG_t *const pMsg)
 			break;
 	}
 }
+//static void DealFirmwareUpdate(uint8 keyValue)
+//{
+//	static uint8 FirmwareUpdateK;
+//	if(keyValue == PS_K2)
+//	{
+//		FirmwareUpdateK++;
+//	}
+//	else if(keyValue == PL_K2)
+//	{
+//		if(FirmwareUpdateK == 6)
+//		{
+//			uint8 i;
+//			for(i = 0; i < 10; i++)
+//			{
+//				LedSetLevel(LED_OPEN_ID, HIGH, true);
+//				LedSetLevel(LED_PAUSE_ID, HIGH, true);
+//				LedSetLevel(LED_CLOSE_ID, HIGH, true);
+//				delay(50);
+//				LedSetLevel(LED_OPEN_ID, LOW, true);
+//				LedSetLevel(LED_PAUSE_ID, LOW, true);
+//				LedSetLevel(LED_CLOSE_ID, LOW, true);
+//				delay(50);
+//			}
+//			Log("FirmwareUpdate \r\n");
+//			SoftResetLdRomStart();
+//		}
+//		else
+//		{
+//			FirmwareUpdateK = 0;
+//		}
+//	}
+//	else 
+//	{
+//		FirmwareUpdateK = 0;
+//		
+//	}
+//}
+
 

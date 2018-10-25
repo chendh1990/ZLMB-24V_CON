@@ -17,9 +17,16 @@
 typedef struct
 {
 	uint8 buffer[PACKET_QUEUE_MAX];
-	uint8 in;
-	uint8 out;
-	uint8 size;
+#if PACKET_QUEUE_MAX > 255
+		uint16 in;
+		uint16 out;
+		uint16 size;
+#else
+		uint8 in;
+		uint8 out;
+		uint8 size;
+#endif
+
 }PacketQueue_t;
 
 

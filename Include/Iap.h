@@ -28,9 +28,12 @@
 /**********************函数声明**************************/
 IAP_EXTERN void IAP_ByteWrite(uint16 byteAddr, uint8 dat);
 IAP_EXTERN uint8 IAP_ByteRead(uint16 byteAddr);
-IAP_EXTERN void IAP_PageWrite(uint16 pageAddr, uint8 dat[], uint8 length);
-IAP_EXTERN void IAP_PageRead(uint16 pageAddr, uint8 dat[], uint8 length);
+IAP_EXTERN void IAP_PageWrite(uint16 pageAddr, const uint8 dat[], uint16 length);
+IAP_EXTERN void IAP_PageRead(uint16 pageAddr, uint8 dat[], uint16 length);
 IAP_EXTERN void IAP_PageErase(uint16 pageAddr);
+IAP_EXTERN void IAP_PageEraseAllAppRom(void);
+IAP_EXTERN void ProgramCONFIG(uint8 addr, uint8 value);
+IAP_EXTERN void SoftResetLdRomStart(void);
 
 #endif
 

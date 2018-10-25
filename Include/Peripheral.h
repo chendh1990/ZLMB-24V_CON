@@ -25,8 +25,8 @@
 
 #define JK1_CTR_PIN			P10
 #define JK2_CTR_PIN			P00
-#define LED_OPEN_PIN		P11
-#define LED_CLOSE_PIN		P12
+#define LED_OPEN_PIN		P12
+#define LED_CLOSE_PIN		P11
 #define LED_PAUSE_PIN		P15
 #define LED_WIFI_PIN		P01
 

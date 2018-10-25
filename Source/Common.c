@@ -141,3 +141,12 @@ void *my_memcpy(void *dest, const void *src, uint16 count)
   
   return dest;  
 }
+void delay(uint16 ms)
+{
+	int t = 1000;
+	for(; ms > 0; ms--)
+	{
+		while(t-- > 0);
+		t = 1000;
+	}
+}

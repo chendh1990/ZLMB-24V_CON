@@ -94,7 +94,8 @@ static void InitialUART0_Int()
 /**************************使能总中断***************************/
 	set_EA; 	//使能总中断
 /***************************************************************/
-	
+	PS = 1;
+	set_PSH; 	//璁剧疆鏈�楂樹紭鍏堢骇
 }
 void UartInit(void)
 {		
@@ -123,10 +124,16 @@ char putchar_wifi(char c)
 #else	//printf for uart1
 char putchar_wifi(char c)
 {
+	txOver = false;
+	SBUF = c;	   /* output character */
+	while(!txOver);
+#if 0
 	while(!TI);  /* wait until transmitter ready */
 	TI = 0;
-	SBUF = c;      /* output character */
+	SBUF = c;	   /* output character */
+#endif
 	return (c);
+
 }
 
 char putchar(char c)
